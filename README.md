@@ -4,6 +4,8 @@ The mobile app for [StaffConnect](https://github.com/Taiwooye/Staff-connect), a 
 
 It is built with **Expo (React Native + Expo Router)**. The same code runs on iOS and Android, and exports to the web for a hosted demo.
 
+**Live demo:** https://staffconnect-mobile.vercel.app. Every push to `main` redeploys automatically through Vercel's GitHub integration.
+
 ## Two apps in one, like Uber and Bolt
 
 Uber and Bolt ship separate apps for riders and drivers because the two sides do different jobs. A rider *requests and tracks*. A driver *goes online, decides on offers in seconds, and completes work*. StaffConnect follows the same split. The role a person chooses during onboarding decides which interface they get, and each side has its own navigation and visual identity.
