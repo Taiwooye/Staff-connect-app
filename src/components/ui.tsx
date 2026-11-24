@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { createContext, type ReactNode, useContext } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Platform,
   Pressable,
   type StyleProp,
@@ -188,7 +189,26 @@ export function Chip({
   );
 }
 
-export function Avatar({ initials, color, size = 48 }: { initials: string; color: string; size?: number }) {
+export function Avatar({
+  initials,
+  color,
+  size = 48,
+  photo,
+}: {
+  initials: string;
+  color: string;
+  size?: number;
+  photo?: string;
+}) {
+  if (photo) {
+    return (
+      <Image
+        source={{ uri: photo }}
+        accessibilityLabel="Profile photo"
+        style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color }}
+      />
+    );
+  }
   return (
     <View
       style={{
@@ -248,12 +268,18 @@ export function Row({
   children,
   gap = 12,
   style,
+  accessibilityLabel,
 }: {
   children: ReactNode;
   gap?: number;
   style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
 }) {
-  return <View style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>{children}</View>;
+  return (
+    <View accessibilityLabel={accessibilityLabel} style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>
+      {children}
+    </View>
+  );
 }
 
 export function Divider() {

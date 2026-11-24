@@ -8,11 +8,12 @@ import { MatchBadge } from '@/components/match-badge';
 import { Avatar, Card, Row, shadow, Stars, T, tap } from '@/components/ui';
 import { demoPros, getService, services } from '@/lib/catalog';
 import { matchPros } from '@/lib/matching';
-import { useStore } from '@/lib/store';
+import { clientJobHref, useStore } from '@/lib/store';
 import { clientPalette as p, formatNaira, radius } from '@/lib/theme';
 
 const statusCopy = {
-  searching: 'Finding your pro…',
+  choosing: 'Choose your pro',
+  searching: 'Waiting for your pro to accept',
   accepted: 'Your pro is on the way',
   arrived: 'Your pro has arrived',
   in_progress: 'Job in progress',
@@ -75,7 +76,7 @@ export default function ClientHome() {
         </View>
 
         {activeClientJob && (
-          <Pressable onPress={() => router.push(`/trip/${activeClientJob.id}`)}>
+          <Pressable onPress={() => router.push(clientJobHref(activeClientJob))}>
             <Row style={styles.activeBanner}>
               <View style={styles.activeIcon}>
                 <Ionicons name={getService(activeClientJob.serviceId).icon} size={22} color="#fff" />

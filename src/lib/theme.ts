@@ -80,3 +80,15 @@ export const space = (n: number) => n * 4;
 export function formatNaira(amount: number) {
   return `₦${Math.round(amount).toLocaleString('en-NG')}`;
 }
+
+export function initialsOf(name: string) {
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .map((s) => s[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || '?'
+  );
+}

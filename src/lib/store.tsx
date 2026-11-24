@@ -18,7 +18,6 @@ import {
   getService,
   HOURS_PER_UNIT,
   PLATFORM_COMMISSION,
-  proForService,
   SERVICE_FEE_RATE,
   services,
 } from './catalog';
@@ -31,6 +30,23 @@ export type Profile = {
   phone: string;
   state: string;
   area: string;
+  photo?: string; // data URI of a small square photo
+};
+
+export type BankAccount = {
+  bank: string;
+  accountNumber: string;
+  accountName: string;
+};
+
+export type Review = {
+  id: string;
+  proId: string;
+  jobId: string;
+  rating: number;
+  tags: string[];
+  comment: string;
+  at: number;
 };
 
 export type DocKey = 'id' | 'selfie' | 'address' | 'reference';
@@ -47,7 +63,8 @@ export type ProviderProfile = {
 };
 
 export type ClientJobStatus =
-  | 'searching'
+  | 'choosing' // client is comparing pros; nothing is sent yet
+  | 'searching' // request sent to the chosen pro, waiting for them to accept
   | 'accepted'
   | 'arrived'
   | 'in_progress'
@@ -79,6 +96,7 @@ export type ClientJob = {
   preferredProId?: string;
   rating?: number;
   tip?: number;
+  reviewSkipped?: boolean;
 };
 
 export type Offer = {
@@ -120,6 +138,8 @@ type State = {
   offersAccepted: number;
   clientPrefs?: ClientPrefs;
   applications: Application[];
+  bankAccount?: BankAccount;
+  reviews: Review[];
 };
 
 export type ApplicationStatus = 'applied' | 'shortlisted' | 'hired' | 'not_selected';
@@ -141,6 +161,7 @@ const initialState: State = {
   offersSeen: 0,
   offersAccepted: 0,
   applications: [],
+  reviews: [],
 };
 
 type Action =
@@ -160,6 +181,11 @@ type Action =
   | { type: 'apply'; application: Application }
   | { type: 'updateApplication'; jobId: string; patch: Partial<Application> }
   | { type: 'withdraw'; jobId: string }
+  | { type: 'updateProfile'; patch: Partial<Profile> }
+  | { type: 'updateProviderProfile'; patch: Partial<ProviderProfile> }
+  | { type: 'setBank'; bank?: BankAccount }
+  | { type: 'choosePro'; jobId: string; pro: DemoPro; now: number }
+  | { type: 'rateJob'; jobId: string; review: Review; tip: number }
   | { type: 'reset' };
 
 function reducer(state: State, action: Action): State {
@@ -218,6 +244,29 @@ function reducer(state: State, action: Action): State {
       };
     case 'withdraw':
       return { ...state, applications: state.applications.filter((a) => a.jobId !== action.jobId) };
+    case 'updateProfile':
+      return state.profile ? { ...state, profile: { ...state.profile, ...action.patch } } : state;
+    case 'updateProviderProfile':
+      return state.providerProfile ? { ...state, providerProfile: { ...state.providerProfile, ...action.patch } } : state;
+    case 'setBank':
+      return { ...state, bankAccount: action.bank };
+    case 'choosePro':
+      return {
+        ...state,
+        clientJobs: state.clientJobs.map((j) => {
+          if (j.id !== action.jobId) return j;
+          const price = priceFor(j.serviceId, j.hours, action.pro.hourlyRate);
+          return { ...j, ...price, preferredProId: action.pro.id, status: 'searching', createdAt: action.now };
+        }),
+      };
+    case 'rateJob':
+      return {
+        ...state,
+        clientJobs: state.clientJobs.map((j) =>
+          j.id === action.jobId ? { ...j, rating: action.review.rating, tip: action.tip } : j,
+        ),
+        reviews: [action.review, ...state.reviews.filter((r) => r.jobId !== action.jobId)],
+      };
     case 'reset':
       return { ...initialState, hydrated: true };
   }
@@ -249,7 +298,15 @@ export function makePin() {
 export function createClientJob(
   input: Omit<ClientJob, 'id' | 'createdAt' | 'pin' | 'status' | 'travelMs'>,
 ): ClientJob {
-  return { ...input, id: makeId(), createdAt: Date.now(), pin: makePin(), status: 'searching', travelMs: 20000 };
+  return {
+    ...input,
+    id: makeId(),
+    createdAt: Date.now(),
+    pin: makePin(),
+    // Nothing is sent until the client picks a pro themselves.
+    status: input.preferredProId ? 'searching' : 'choosing',
+    travelMs: 20000,
+  };
 }
 
 export function priceFor(serviceId: string, hours: number, hourlyRate?: number) {
@@ -283,7 +340,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   const activeClientJob = state.clientJobs.find(
-    (j) => j.status !== 'cancelled' && (j.status !== 'completed' || j.rating === undefined),
+    (j) => j.status !== 'cancelled' && (j.status !== 'completed' || (j.rating === undefined && !j.reviewSkipped)),
   );
   const activeProviderJob = state.providerJobs.find(
     (j) => j.status !== 'completed' || j.clientRatingGiven === undefined,
@@ -333,12 +390,10 @@ function useSimulation(
 
     if (clientJob) {
       const j = clientJob;
-      if (j.status === 'searching' && now - j.createdAt > MATCH_DELAY_MS) {
-        dispatch({
-          type: 'updateClientJob',
-          id: j.id,
-          patch: { status: 'accepted', acceptedAt: now, pro: getPro(j.preferredProId) ?? proForService(j.serviceId) },
-        });
+      const chosen = getPro(j.preferredProId);
+      // Only the pro the client chose can accept; nobody is assigned automatically.
+      if (j.status === 'searching' && chosen && now - j.createdAt > MATCH_DELAY_MS) {
+        dispatch({ type: 'updateClientJob', id: j.id, patch: { status: 'accepted', acceptedAt: now, pro: chosen } });
       } else if (j.status === 'accepted' && j.acceptedAt && now - j.acceptedAt > j.travelMs) {
         dispatch({ type: 'updateClientJob', id: j.id, patch: { status: 'arrived', arrivedAt: now } });
       } else if (
@@ -427,4 +482,34 @@ function makeOffer(state: State, now: number): Offer {
 export function acceptanceRate(state: Pick<State, 'offersSeen' | 'offersAccepted' | 'incoming'>) {
   const decided = state.offersSeen - (state.incoming ? 1 : 0);
   return decided > 0 ? Math.round((state.offersAccepted / decided) * 100) : 100;
+}
+
+/** Where a client job should open: the pro picker while choosing, otherwise live tracking. */
+export function clientJobHref(job: Pick<ClientJob, 'id' | 'status'>) {
+  return job.status === 'choosing' ? (`/choose/${job.id}` as const) : (`/trip/${job.id}` as const);
+}
+
+/** The client's own choice of pro for a job, stamped with the time it was sent. */
+export function chooseProAction(jobId: string, pro: DemoPro): Action {
+  return { type: 'choosePro', jobId, pro, now: Date.now() };
+}
+
+export function rateJobAction(
+  job: Pick<ClientJob, 'id'> & { pro?: DemoPro },
+  input: { rating: number; tags: string[]; comment: string; tip: number },
+): Action {
+  return {
+    type: 'rateJob',
+    jobId: job.id,
+    tip: input.tip,
+    review: {
+      id: makeId(),
+      proId: job.pro?.id ?? '',
+      jobId: job.id,
+      rating: input.rating,
+      tags: input.tags,
+      comment: input.comment,
+      at: Date.now(),
+    },
+  };
 }

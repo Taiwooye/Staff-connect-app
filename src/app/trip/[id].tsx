@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityMap } from '@/components/city-map';
 import { useToast } from '@/components/toast';
-import { Avatar, Button, Card, Chip, DemoNote, Divider, IconButton, PaletteProvider, Row, shadow, Stars, T, tap } from '@/components/ui';
+import { Avatar, Button, Card, DemoNote, Divider, IconButton, PaletteProvider, Row, shadow, Stars, T, tap } from '@/components/ui';
 import type { IconName } from '@/lib/catalog';
 import { getPro, getService } from '@/lib/catalog';
 import { type ClientJob, DEMO_MS_PER_HOUR, useNow, useStore } from '@/lib/store';
@@ -30,6 +29,8 @@ function Trip() {
   const now = useNow(250);
   const toast = useToast();
   const job = state.clientJobs.find((j) => j.id === id);
+
+  if (job?.status === 'choosing') return <Redirect href={`/choose/${job.id}`} />;
 
   if (!job) {
     return (
@@ -89,21 +90,38 @@ function SheetContent({ job, now, travel, toast }: { job: ClientJob; now: number
   };
 
   if (job.status === 'searching') {
-    const preferred = getPro(job.preferredProId);
+    const chosen = getPro(job.preferredProId);
     const pct = Math.min(1, (now - job.createdAt) / 5000);
+    const first = chosen?.name.split(' ')[0] ?? 'your pro';
     return (
       <>
-        <T variant="title">{preferred ? `Asking ${preferred.name.split(' ')[0]}…` : 'Finding your pro…'}</T>
-        <T muted>
-          {preferred
-            ? `We’ve sent your request to ${preferred.name}. They usually reply within a few minutes.`
-            : `We’re asking the best-rated ${service.short.toLowerCase()} professionals near ${job.area}.`}
-        </T>
+        <T variant="title">Waiting for {first} to accept…</T>
+        <T muted>We’ve sent your request to {chosen?.name ?? 'the pro you chose'}. You’ll see them on the map as soon as they accept.</T>
         <View style={styles.track}>
           <View style={[styles.trackFill, { width: `${Math.max(8, pct * 100)}%` }]} />
         </View>
+        {chosen && (
+          <Row>
+            <Avatar initials={chosen.initials} color={chosen.color} size={48} />
+            <View style={{ flex: 1 }}>
+              <T variant="label">{chosen.name}</T>
+              <T variant="caption" muted>
+                {chosen.area} · {formatNaira(chosen.hourlyRate)}/hr
+              </T>
+            </View>
+          </Row>
+        )}
         <Summary job={job} />
-        <Button label="Cancel request" variant="secondary" onPress={cancel} />
+        <Button
+          label="Choose someone else"
+          variant="secondary"
+          icon="people"
+          onPress={() => {
+            dispatch({ type: 'updateClientJob', id: job.id, patch: { status: 'choosing', preferredProId: undefined } });
+            router.replace(`/choose/${job.id}`);
+          }}
+        />
+        <Button label="Cancel request" variant="ghost" size="md" onPress={cancel} />
       </>
     );
   }
@@ -203,71 +221,44 @@ function SheetContent({ job, now, travel, toast }: { job: ClientJob; now: number
 function Completed({ job }: { job: ClientJob }) {
   const { dispatch } = useStore();
   const pro = job.pro!;
-  const [rating, setRating] = useState(5);
-  const [tip, setTip] = useState(0);
-  const [praise, setPraise] = useState<string[]>([]);
-  const compliments = ['On time', 'Very thorough', 'Friendly', 'Great communication'];
-
+  const first = pro.name.split(' ')[0];
   return (
     <>
-      <View style={{ alignItems: 'center', gap: 10 }}>
-        <Avatar initials={pro.initials} color={pro.color} size={72} />
+      <View style={{ alignItems: 'center', gap: 8 }}>
+        <View style={styles.doneBadge}>
+          <Ionicons name="checkmark" size={36} color="#fff" />
+        </View>
         <T variant="title" style={{ textAlign: 'center' }}>
-          How was {pro.name.split(' ')[0]}?
+          Job complete
         </T>
-        <Row gap={6}>
-          {[1, 2, 3, 4, 5].map((n) => (
-            <Pressable
-              key={n}
-              accessibilityLabel={`${n} star${n > 1 ? 's' : ''}`}
-              onPress={() => {
-                tap();
-                setRating(n);
-              }}>
-              <Ionicons name={n <= rating ? 'star' : 'star-outline'} size={38} color="#F5B32F" />
-            </Pressable>
-          ))}
-        </Row>
-      </View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
-        {compliments.map((c) => (
-          <Chip key={c} label={c} selected={praise.includes(c)} onPress={() => setPraise(praise.includes(c) ? praise.filter((x) => x !== c) : [...praise, c])} />
-        ))}
-      </View>
-      <View style={{ gap: 10 }}>
-        <T variant="label">Add a tip? 100% goes to {pro.name.split(' ')[0]}</T>
-        <Row gap={8}>
-          {[0, 500, 1000, 2000].map((t) => (
-            <Chip key={t} label={t ? formatNaira(t) : 'No tip'} selected={tip === t} onPress={() => setTip(t)} />
-          ))}
-        </Row>
+        <T muted style={{ textAlign: 'center' }}>
+          {first} finished your {getService(job.serviceId).label.toLowerCase()}. Please pay {job.payment === 'cash' ? 'in cash' : 'by bank transfer'}.
+        </T>
       </View>
       <Card style={{ gap: 8 }}>
         <Row style={{ justifyContent: 'space-between' }}>
-          <T muted>{getService(job.serviceId).label} · {job.hours} hrs</T>
+          <T muted>
+            {formatNaira(job.subtotal / job.hours)} × {job.hours} hrs
+          </T>
           <T variant="label">{formatNaira(job.subtotal)}</T>
         </Row>
         <Row style={{ justifyContent: 'space-between' }}>
           <T muted>Service fee</T>
           <T variant="label">{formatNaira(job.fee)}</T>
         </Row>
-        {tip > 0 && (
-          <Row style={{ justifyContent: 'space-between' }}>
-            <T muted>Tip</T>
-            <T variant="label">{formatNaira(tip)}</T>
-          </Row>
-        )}
         <Divider />
         <Row style={{ justifyContent: 'space-between' }}>
-          <T variant="label">Pay {job.payment === 'cash' ? 'in cash' : 'by transfer'}</T>
-          <T variant="heading">{formatNaira(job.total + tip)}</T>
+          <T variant="label">Total to pay {first}</T>
+          <T variant="heading">{formatNaira(job.total)}</T>
         </Row>
       </Card>
+      <Button label={`Rate ${first}`} icon="star" onPress={() => router.push(`/rate/${job.id}`)} />
       <Button
-        label="Done"
+        label="Rate later"
+        variant="ghost"
+        size="md"
         onPress={() => {
-          tap('success');
-          dispatch({ type: 'updateClientJob', id: job.id, patch: { rating, tip } });
+          dispatch({ type: 'updateClientJob', id: job.id, patch: { reviewSkipped: true } });
           router.replace('/client');
         }}
       />
@@ -378,5 +369,6 @@ const styles = StyleSheet.create({
   etaBadge: { width: 60, height: 60, borderRadius: 18, backgroundColor: p.accent, alignItems: 'center', justifyContent: 'center' },
   action: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 10, borderRadius: radius.md, backgroundColor: p.surfaceAlt },
   pinDigit: { width: 34, height: 42, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  doneBadge: { width: 64, height: 64, borderRadius: 32, backgroundColor: p.accent, alignItems: 'center', justifyContent: 'center' },
   svcIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });

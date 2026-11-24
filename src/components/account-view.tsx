@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { IconName } from '@/lib/catalog';
 import { useStore } from '@/lib/store';
-import { clientPalette, providerPalette, radius } from '@/lib/theme';
+import { clientPalette, initialsOf, providerPalette, radius } from '@/lib/theme';
 
 import { useToast } from './toast';
 import { Avatar, Card, Row, T, tap, usePalette } from './ui';
@@ -17,12 +17,8 @@ export function AccountView({ mode, children }: { mode: 'client' | 'provider'; c
   const toast = useToast();
   const { state, dispatch } = useStore();
   const profile = state.profile;
-  const initials = (profile?.name ?? '?')
-    .split(' ')
-    .map((s) => s[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+  const initials = initialsOf(profile?.name ?? '');
+  const bank = state.bankAccount;
 
   const switchTo = (role: 'client' | 'provider') => {
     tap('medium');
@@ -39,7 +35,6 @@ export function AccountView({ mode, children }: { mode: 'client' | 'provider'; c
         ]
       : [
           { icon: 'document-text-outline', label: 'Documents', msg: 'All 4 documents approved (demo).' },
-          { icon: 'card-outline', label: 'Payout account', msg: 'Add a bank account for payouts (demo).' },
           { icon: 'help-circle-outline', label: 'Pro support', msg: 'Support inbox is not connected in the demo.' },
         ];
 
@@ -48,17 +43,52 @@ export function AccountView({ mode, children }: { mode: 'client' | 'provider'; c
   return (
     <View style={{ flex: 1, backgroundColor: p.bg }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: insets.top + 16, gap: 16, paddingBottom: 40 }}>
-        <Row>
-          <Avatar initials={initials} color={p.accent} size={64} />
-          <View style={{ flex: 1 }}>
-            <T variant="title">{profile?.name}</T>
-            <T muted>
-              {profile?.phone} · {profile?.area}, {profile?.state}
-            </T>
-          </View>
-        </Row>
+        <Pressable accessibilityRole="button" accessibilityLabel="Edit profile" onPress={() => router.push('/account/edit')}>
+          <Row>
+            <View>
+              <Avatar initials={initials} color={p.accent} size={72} photo={profile?.photo} />
+              <View
+                style={{
+                  position: 'absolute',
+                  right: -2,
+                  bottom: -2,
+                  width: 26,
+                  height: 26,
+                  borderRadius: 13,
+                  backgroundColor: p.text,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                  borderColor: p.bg,
+                }}>
+                <Ionicons name="camera" size={13} color={p.bg} />
+              </View>
+            </View>
+            <View style={{ flex: 1 }}>
+              <T variant="title">{profile?.name}</T>
+              <T muted>
+                {profile?.phone} · {profile?.area}, {profile?.state}
+              </T>
+              <T variant="label" color={p.accent}>
+                {profile?.photo ? 'Edit profile' : 'Add a photo & edit profile'}
+              </T>
+            </View>
+          </Row>
+        </Pressable>
 
         {children}
+
+        <Card style={{ padding: 0 }}>
+          <MenuRow icon="person-outline" label="Edit profile" detail="Photo, name, phone, area" onPress={() => router.push('/account/edit')} />
+          <MenuRow
+            icon="card-outline"
+            label={bank ? 'Bank account' : 'Add bank account'}
+            detail={bank ? `${bank.bank} ····${bank.accountNumber.slice(-4)}` : mode === 'provider' ? 'Needed to get paid' : 'For refunds and transfers'}
+            onPress={() => router.push('/account/bank')}
+            highlight={!bank && mode === 'provider'}
+            first={false}
+          />
+        </Card>
 
         <Card style={{ padding: 0 }}>
           {items.map((it, i) => (
@@ -118,5 +148,46 @@ export function AccountView({ mode, children }: { mode: 'client' | 'provider'; c
       </ScrollView>
       {toast.node}
     </View>
+  );
+}
+
+function MenuRow({
+  icon,
+  label,
+  detail,
+  onPress,
+  highlight,
+  first = true,
+}: {
+  icon: IconName;
+  label: string;
+  detail: string;
+  onPress: () => void;
+  highlight?: boolean;
+  first?: boolean;
+}) {
+  const p = usePalette();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        padding: 16,
+        borderTopWidth: first ? 0 : 1,
+        borderTopColor: p.border,
+        opacity: pressed ? 0.6 : 1,
+      })}>
+      <Ionicons name={icon} size={22} color={highlight ? p.accent : p.text} />
+      <View style={{ flex: 1 }}>
+        <T variant="label">{label}</T>
+        <T variant="caption" color={highlight ? p.accent : p.textMuted}>
+          {detail}
+        </T>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={p.textMuted} />
+    </Pressable>
   );
 }

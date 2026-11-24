@@ -14,9 +14,19 @@ Uber and Bolt ship separate apps for riders and drivers because the two sides do
 |---|---|---|
 | Home | Map with nearby pros, plus "What do you need help with?" service grid | Map with a big **GO** button, today's earnings, acceptance rate |
 | Core action | Book: area, address, now or scheduled, hours, tasks, payment, price breakdown | Incoming job offer with a **15-second countdown ring**, take-home pay, distance, and accept/decline |
-| Live flow | Matching → pro on the way (live route and ETA) → arrived → share **start code** → in progress → rate and tip | Head to client (navigation banner) → I've arrived → enter client's **start code** → checklist → complete → rate client |
+| Live flow | **Compare available pros and choose one yourself** → they accept → on the way (live route and ETA) → arrived → share **start code** → in progress → **rate** (stars, tags, comment, tip) | Head to client (navigation banner) → I've arrived → enter client's **start code** → checklist → complete → rate client |
 | Tabs | Home · Bookings · Account | Work · Jobs · Earnings · Profile |
 | Onboarding | Phone + OTP → name and area → what you need → your matches | Phone + OTP → name and area → services → work areas → rate and availability → bio → ID, selfie, address, and references → review → approval |
+
+### You choose, not the app
+
+Nobody is assigned automatically. After filling in a booking, the client taps **See available pros** and gets a sortable list: best match, top rated, lowest price or nearest. Each entry shows the match %, rating, reasons and the total price at that pro's rate. The client can open any profile to read reviews, then taps **Choose** and confirms before the request is sent. If the pro doesn't suit, **Choose someone else** returns to the list.
+
+### Profiles, accounts and ratings
+
+- **Edit profile:** upload or take a photo (cropped square and stored small on the device), and change your name, phone and area. Providers can also edit services, work areas, rate, availability and bio.
+- **Bank account:** add, change or remove an account, with a demo name check. The number is masked as ····1234.
+- **Rating:** a dedicated screen with large stars and labels (Poor → Excellent), quick tags, a comment and an optional tip. Unrated bookings show a **Rate** button in Bookings and on the pro's profile, and your reviews appear on the pro's profile and count towards their average.
 
 ### Matching
 

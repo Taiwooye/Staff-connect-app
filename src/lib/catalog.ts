@@ -205,10 +205,28 @@ export function getJob(id: string | undefined) {
 // Rough hours behind each pay unit, used to compare against hourly rates.
 export const HOURS_PER_UNIT = { hour: 1, day: 8, month: 160 } as const;
 
-export function proForService(serviceId: string) {
-  const matches = demoPros.filter((p) => p.services.includes(serviceId));
-  const pool = matches.length ? matches : demoPros;
-  return pool[Math.floor(Math.random() * pool.length)];
+const reviewPool = [
+  { author: 'Folake A.', rating: 5, text: 'Arrived on time and left the place spotless. Would book again.' },
+  { author: 'David O.', rating: 5, text: 'Very respectful and great with the kids.' },
+  { author: 'Ngozi K.', rating: 4, text: 'Good work overall, just a little late the first day.' },
+  { author: 'Tolu B.', rating: 5, text: 'Friendly, careful and communicated clearly the whole time.' },
+  { author: 'Yetunde M.', rating: 5, text: 'Exactly what we needed. Thorough and kind.' },
+  { author: 'Ibrahim S.', rating: 4, text: 'Did a solid job and followed every instruction.' },
+];
+
+export type ShownReview = { author: string; rating: number; text: string; tags?: string[]; mine?: boolean };
+
+/** Three fictional sample reviews per demo pro (deterministic, so they don't reshuffle). */
+export function sampleReviews(pro: DemoPro): ShownReview[] {
+  const start = Number(pro.id.replace(/\D/g, '')) % reviewPool.length;
+  return [0, 1, 2].map((i) => reviewPool[(start + i) % reviewPool.length]);
+}
+
+/** Combines a pro's existing rating with the reviews this user has left. */
+export function ratingWith(pro: DemoPro, mine: { rating: number }[]) {
+  const count = pro.jobs + mine.length;
+  const sum = pro.rating * pro.jobs + mine.reduce((t, r) => t + r.rating, 0);
+  return { average: Math.round((sum / count) * 10) / 10, count };
 }
 
 export const demoClients = [

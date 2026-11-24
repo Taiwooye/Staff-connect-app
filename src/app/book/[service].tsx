@@ -6,7 +6,7 @@ import { Pressable, View } from 'react-native';
 import { Field, FormScreen } from '@/components/form-screen';
 import { Avatar, Button, Card, Chip, Divider, PaletteProvider, Row, Stars, T, tap } from '@/components/ui';
 import { getPro, getService, launchLocations, type LaunchState } from '@/lib/catalog';
-import { createClientJob, priceFor, useStore } from '@/lib/store';
+import { clientJobHref, createClientJob, priceFor, useStore } from '@/lib/store';
 import { clientPalette as p, formatNaira, radius } from '@/lib/theme';
 
 const whenOptions = ['Now', 'Later today', 'Tomorrow'];
@@ -55,13 +55,13 @@ function Booking() {
     });
     tap('success');
     dispatch({ type: 'requestJob', job });
-    router.replace(`/trip/${job.id}`);
+    router.replace(clientJobHref(job));
   };
 
   if (activeClientJob) {
     return (
       <FormScreen title="You already have a booking" subtitle="Finish or cancel it before requesting new help.">
-        <Button label="View current booking" onPress={() => router.replace(`/trip/${activeClientJob.id}`)} />
+        <Button label="View current booking" onPress={() => router.replace(clientJobHref(activeClientJob))} />
       </FormScreen>
     );
   }
@@ -75,22 +75,25 @@ function Booking() {
           <Row style={{ justifyContent: 'space-between' }}>
             <View>
               <T variant="caption" muted>
-                {hours} hrs · {payment === 'cash' ? 'Cash' : 'Bank transfer'}
+                {hours} hrs · {pro ? 'total' : 'estimate'}
               </T>
-              <T variant="title">{formatNaira(price.total)}</T>
+              <T variant="title">{pro ? '' : '~'}{formatNaira(price.total)}</T>
             </View>
             <Button
-              label={when === 'Now' ? 'Request now' : 'Schedule'}
+              label={pro ? `Send to ${pro.name.split(' ')[0]}` : 'See available pros'}
+              icon={pro ? 'paper-plane' : 'people'}
               disabled={!valid}
               onPress={request}
               style={{ paddingHorizontal: 28 }}
             />
           </Row>
-          {!valid && (
-            <T variant="caption" muted>
-              Add your street address to continue.
-            </T>
-          )}
+          <T variant="caption" muted>
+            {!valid
+              ? 'Add your street address to continue.'
+              : pro
+                ? `Nothing is booked until ${pro.name.split(' ')[0]} accepts.`
+                : 'Next you’ll compare matching pros and choose one yourself. Nothing is sent yet.'}
+          </T>
         </>
       }>
       {pro && (
