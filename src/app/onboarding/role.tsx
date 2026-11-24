@@ -43,7 +43,7 @@ export default function RolePicker() {
       title="How will you use StaffConnect?"
       subtitle="Each side has its own app experience. You can switch later from your account."
       step={0}
-      total={4}
+      total={5}
       footer={
         <Button
           label={role === 'provider' ? 'Continue as a professional' : role === 'client' ? 'Continue as a client' : 'Choose one'}

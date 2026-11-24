@@ -4,6 +4,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, DemoNote, PaletteProvider, Row, T } from '@/components/ui';
+import { matchJobs, RECOMMENDED_THRESHOLD } from '@/lib/matching';
 import { useNow, useStore } from '@/lib/store';
 import { providerPalette as p } from '@/lib/theme';
 
@@ -23,6 +24,7 @@ export default function ReviewScreen() {
 
   const elapsed = pp.status === 'approved' ? Infinity : now - pp.submittedAt;
   const approved = pp.status === 'approved';
+  const jobMatches = matchJobs(pp, state.profile?.state ?? 'Lagos').filter((m) => m.score >= RECOMMENDED_THRESHOLD).length;
 
   return (
     <PaletteProvider palette={p}>
@@ -79,6 +81,14 @@ export default function ReviewScreen() {
             icon={approved ? 'flash' : undefined}
             onPress={() => router.replace('/provider')}
           />
+          {approved && jobMatches > 0 && (
+            <Button
+              label={`See ${jobMatches} jobs that match you`}
+              variant="secondary"
+              icon="sparkles"
+              onPress={() => router.replace('/provider/jobs')}
+            />
+          )}
           <Button
             label="Book help instead"
             variant="ghost"

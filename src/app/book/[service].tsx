@@ -4,8 +4,8 @@ import { type ReactNode, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Field, FormScreen } from '@/components/form-screen';
-import { Button, Card, Chip, Divider, PaletteProvider, Row, T, tap } from '@/components/ui';
-import { getService, launchLocations, type LaunchState } from '@/lib/catalog';
+import { Avatar, Button, Card, Chip, Divider, PaletteProvider, Row, Stars, T, tap } from '@/components/ui';
+import { getPro, getService, launchLocations, type LaunchState } from '@/lib/catalog';
 import { createClientJob, priceFor, useStore } from '@/lib/store';
 import { clientPalette as p, formatNaira, radius } from '@/lib/theme';
 
@@ -21,8 +21,10 @@ export default function BookService() {
 }
 
 function Booking() {
-  const { service: serviceId } = useLocalSearchParams<{ service: string }>();
+  const { service: serviceId, pro: proId } = useLocalSearchParams<{ service: string; pro?: string }>();
   const service = getService(serviceId);
+  const pro = getPro(proId);
+  const rate = pro?.hourlyRate ?? service.hourlyRate;
   const { state, dispatch, activeClientJob } = useStore();
   const homeState = (state.profile?.state as LaunchState) ?? 'Lagos';
 
@@ -35,7 +37,7 @@ function Booking() {
   const [notes, setNotes] = useState('');
   const [payment, setPayment] = useState<'cash' | 'transfer'>('transfer');
 
-  const price = priceFor(service.id, hours);
+  const price = priceFor(service.id, hours, rate);
   const valid = address.trim().length >= 4 && tasks.length > 0;
 
   const request = () => {
@@ -49,6 +51,7 @@ function Booking() {
       notes: notes.trim(),
       ...price,
       payment,
+      preferredProId: pro?.id,
     });
     tap('success');
     dispatch({ type: 'requestJob', job });
@@ -66,7 +69,7 @@ function Booking() {
   return (
     <FormScreen
       title={service.label}
-      subtitle={`${service.description} · from ${formatNaira(service.hourlyRate)}/hr`}
+      subtitle={pro ? `With ${pro.name} · ${formatNaira(rate)}/hr` : `${service.description} · from ${formatNaira(rate)}/hr`}
       footer={
         <>
           <Row style={{ justifyContent: 'space-between' }}>
@@ -90,6 +93,20 @@ function Booking() {
           )}
         </>
       }>
+      {pro && (
+        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: p.accent }}>
+          <Avatar initials={pro.initials} color={pro.color} size={44} />
+          <View style={{ flex: 1 }}>
+            <T variant="label">Requesting {pro.name.split(' ')[0]} directly</T>
+            <Row gap={8}>
+              <Stars value={pro.rating} size={12} color="#C98A0B" />
+              <T variant="caption" muted>
+                {pro.area} · {pro.jobs} jobs
+              </T>
+            </Row>
+          </View>
+        </Card>
+      )}
       <Section icon="location-outline" title="Where">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {launchLocations[homeState].map((a) => (
@@ -158,7 +175,7 @@ function Booking() {
           ))}
         </Row>
         <Card style={{ gap: 8 }}>
-          <Line label={`${formatNaira(service.hourlyRate)} × ${hours} hrs`} value={formatNaira(price.subtotal)} />
+          <Line label={`${formatNaira(rate)} × ${hours} hrs`} value={formatNaira(price.subtotal)} />
           <Line label="Service fee (10%)" value={formatNaira(price.fee)} />
           <Divider />
           <Line label="Total" value={formatNaira(price.total)} bold />

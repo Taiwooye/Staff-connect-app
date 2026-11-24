@@ -8,6 +8,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { CityMap } from '@/components/city-map';
 import { Button, Card, Row, shadow, Stars, T, tap } from '@/components/ui';
 import { getService } from '@/lib/catalog';
+import { matchJobs, RECOMMENDED_THRESHOLD } from '@/lib/matching';
 import { acceptanceRate, type Offer, useNow, useStore } from '@/lib/store';
 import { formatNaira, providerPalette as p, radius } from '@/lib/theme';
 
@@ -29,6 +30,8 @@ export default function ProviderHome() {
     .filter((j) => j.status === 'completed' && (j.completedAt ?? 0) >= startOfDay())
     .reduce((s, j) => s + j.pay, 0);
   const acceptance = acceptanceRate(state);
+  const jobMatches = matchJobs(pp, state.profile?.state ?? 'Lagos').filter((m) => m.score >= RECOMMENDED_THRESHOLD).length;
+  const hired = state.applications.filter((a) => a.status === 'hired').length;
 
   const toggle = () => {
     tap('heavy');
@@ -61,6 +64,19 @@ export default function ProviderHome() {
           <T variant="heading">{formatNaira(today)}</T>
         </Pressable>
       </Row>
+      <Pressable
+        onPress={() => router.navigate('/provider/jobs')}
+        style={[styles.jobsPill, { top: insets.top + 74 }]}
+        accessibilityRole="button">
+        <Ionicons name={hired ? 'checkmark-circle' : 'sparkles'} size={16} color={hired ? p.success : p.accent} />
+        <View>
+          <T variant="label">{hired ? `Hired for ${hired} job${hired > 1 ? 's' : ''}` : `${jobMatches} jobs match you`}</T>
+          <T variant="caption" muted>
+            {hired ? 'See details' : 'Ongoing work · apply now'}
+          </T>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={p.textMuted} />
+      </Pressable>
       <View style={[styles.stats, { top: insets.top + 74 }]}>
         <Stat icon="checkmark-done" value={`${acceptance}%`} label="Acceptance" />
         <Stat icon="star" value="4.9" label="Rating" />
@@ -295,6 +311,20 @@ function Meta({ icon, text }: { icon: 'navigate-outline' | 'location-outline' | 
 const styles = StyleSheet.create({
   top: { position: 'absolute', left: 16, right: 16, justifyContent: 'center' },
   earnPill: { backgroundColor: p.surface, borderRadius: radius.pill, paddingHorizontal: 22, paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: p.border, ...shadow(3) },
+  jobsPill: {
+    position: 'absolute',
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: p.surface,
+    borderRadius: radius.md,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: p.border,
+    ...shadow(3),
+  },
   stats: { position: 'absolute', right: 16, gap: 8 },
   stat: { backgroundColor: p.surface, borderRadius: radius.md, padding: 10, alignItems: 'center', minWidth: 84, borderWidth: 1, borderColor: p.border },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, gap: 20 },

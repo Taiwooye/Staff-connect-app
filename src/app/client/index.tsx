@@ -4,8 +4,10 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityMap } from '@/components/city-map';
+import { MatchBadge } from '@/components/match-badge';
 import { Avatar, Card, Row, shadow, Stars, T, tap } from '@/components/ui';
 import { demoPros, getService, services } from '@/lib/catalog';
+import { matchPros } from '@/lib/matching';
 import { useStore } from '@/lib/store';
 import { clientPalette as p, formatNaira, radius } from '@/lib/theme';
 
@@ -28,6 +30,13 @@ export default function ClientHome() {
   const { state, activeClientJob } = useStore();
   const first = state.profile?.name.split(' ')[0] ?? 'there';
   const lastCompleted = state.clientJobs.find((j) => j.status === 'completed');
+  const matches = state.clientPrefs && state.profile ? matchPros(state.clientPrefs, state.profile) : null;
+  const mapPros = (matches?.length ? matches.map((m) => m.item) : demoPros).slice(0, 3);
+  const spots = [
+    { x: 0.18, y: 0.35 },
+    { x: 0.82, y: 0.3 },
+    { x: 0.72, y: 0.82 },
+  ];
 
   return (
     <View style={{ flex: 1, backgroundColor: p.bg }}>
@@ -37,9 +46,7 @@ export default function ClientHome() {
           seed={11}
           markers={[
             { kind: 'home', at: { x: 0.5, y: 0.62 }, label: state.profile?.area },
-            { kind: 'pro', at: { x: 0.18, y: 0.35 }, initials: 'AO', color: '#0F9D6B' },
-            { kind: 'pro', at: { x: 0.82, y: 0.3 }, initials: 'TA', color: '#2C7BE5' },
-            { kind: 'pro', at: { x: 0.72, y: 0.82 }, initials: 'BO', color: '#C2417A' },
+            ...mapPros.map((pro, i) => ({ kind: 'pro' as const, at: spots[i], initials: pro.initials, color: pro.color })),
           ]}
         />
         <Row style={[styles.topBar, { top: insets.top + 10 }]}>
@@ -122,35 +129,67 @@ export default function ClientHome() {
           </Pressable>
         )}
 
-        <View style={{ gap: 12 }}>
-          <Row style={{ justifyContent: 'space-between' }}>
-            <T variant="heading">Top-rated near you</T>
-            <T variant="caption" muted>
-              Demo profiles
-            </T>
-          </Row>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-            {demoPros.map((pro) => (
-              <Card key={pro.id} style={{ width: 160, gap: 10 }}>
-                <Avatar initials={pro.initials} color={pro.color} size={44} />
-                <View>
-                  <T variant="label" numberOfLines={1}>
-                    {pro.name}
-                  </T>
-                  <T variant="caption" muted numberOfLines={1}>
-                    {pro.services.map((id) => getService(id).short).join(' · ')}
-                  </T>
-                </View>
-                <Row style={{ justifyContent: 'space-between' }}>
-                  <Stars value={pro.rating} size={13} color="#C98A0B" />
-                  <T variant="caption" muted>
-                    {pro.jobs} jobs
-                  </T>
-                </Row>
-              </Card>
-            ))}
-          </ScrollView>
-        </View>
+        {matches ? (
+          <View style={{ gap: 12 }}>
+            <Row style={{ justifyContent: 'space-between' }}>
+              <View>
+                <T variant="heading">Matched for you</T>
+                <T variant="caption" muted>
+                  {state.clientPrefs!.services.map((id) => getService(id).short).join(', ')} · {state.clientPrefs!.frequency}
+                </T>
+              </View>
+              <Pressable onPress={() => router.push('/matches')} hitSlop={8}>
+                <T variant="label" color={p.accent}>
+                  See all {matches.length}
+                </T>
+              </Pressable>
+            </Row>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+              {matches.slice(0, 6).map(({ item: pro, score, reasons }) => (
+                <Pressable key={pro.id} onPress={() => router.push(`/pro/${pro.id}`)}>
+                  <Card style={{ width: 176, gap: 10 }}>
+                    <Row style={{ justifyContent: 'space-between' }}>
+                      <Avatar initials={pro.initials} color={pro.color} size={44} />
+                      <MatchBadge score={score} />
+                    </Row>
+                    <View>
+                      <T variant="label" numberOfLines={1}>
+                        {pro.name}
+                      </T>
+                      <T variant="caption" muted numberOfLines={1}>
+                        {reasons[1] ?? reasons[0]}
+                      </T>
+                    </View>
+                    <Row style={{ justifyContent: 'space-between' }}>
+                      <Stars value={pro.rating} size={13} color="#C98A0B" />
+                      <T variant="caption" muted>
+                        {formatNaira(pro.hourlyRate)}/hr
+                      </T>
+                    </Row>
+                  </Card>
+                </Pressable>
+              ))}
+              {matches.length === 0 && (
+                <Card style={{ width: 260 }}>
+                  <T muted>No matches in {state.profile?.state} yet for these services. Try booking — nearby pros are notified.</T>
+                </Card>
+              )}
+            </ScrollView>
+          </View>
+        ) : (
+          <Pressable onPress={() => router.push('/onboarding/needs')}>
+            <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: p.accent }}>
+              <Ionicons name="sparkles" size={28} color={p.accent} />
+              <View style={{ flex: 1 }}>
+                <T variant="label">Get matched with the right pro</T>
+                <T variant="caption" muted>
+                  Tell us what you need and we’ll suggest people near you.
+                </T>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={p.textMuted} />
+            </Card>
+          </Pressable>
+        )}
 
         <Card style={{ backgroundColor: p.accentSoft, borderColor: p.accentSoft, gap: 10 }}>
           <Row gap={10}>

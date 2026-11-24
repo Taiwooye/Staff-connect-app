@@ -13,12 +13,16 @@ import {
 import {
   type DemoPro,
   demoClients,
+  getJob,
+  getPro,
   getService,
+  HOURS_PER_UNIT,
   PLATFORM_COMMISSION,
   proForService,
   SERVICE_FEE_RATE,
   services,
 } from './catalog';
+import type { ClientPrefs } from './matching';
 
 export type Role = 'client' | 'provider';
 
@@ -72,6 +76,7 @@ export type ClientJob = {
   travelMs: number;
   pin: string;
   pro?: DemoPro;
+  preferredProId?: string;
   rating?: number;
   tip?: number;
 };
@@ -113,6 +118,19 @@ type State = {
   incoming?: Offer;
   offersSeen: number;
   offersAccepted: number;
+  clientPrefs?: ClientPrefs;
+  applications: Application[];
+};
+
+export type ApplicationStatus = 'applied' | 'shortlisted' | 'hired' | 'not_selected';
+
+export type Application = {
+  jobId: string;
+  rate: number; // proposed pay, in the job's pay unit
+  note: string;
+  status: ApplicationStatus;
+  appliedAt: number;
+  updatedAt: number;
 };
 
 const initialState: State = {
@@ -122,6 +140,7 @@ const initialState: State = {
   providerJobs: [],
   offersSeen: 0,
   offersAccepted: 0,
+  applications: [],
 };
 
 type Action =
@@ -137,6 +156,10 @@ type Action =
   | { type: 'dismissOffer' }
   | { type: 'acceptOffer'; now: number }
   | { type: 'updateProviderJob'; id: string; patch: Partial<ProviderJob> }
+  | { type: 'setClientPrefs'; prefs: ClientPrefs }
+  | { type: 'apply'; application: Application }
+  | { type: 'updateApplication'; jobId: string; patch: Partial<Application> }
+  | { type: 'withdraw'; jobId: string }
   | { type: 'reset' };
 
 function reducer(state: State, action: Action): State {
@@ -181,6 +204,20 @@ function reducer(state: State, action: Action): State {
         ...state,
         providerJobs: state.providerJobs.map((j) => (j.id === action.id ? { ...j, ...action.patch } : j)),
       };
+    case 'setClientPrefs':
+      return { ...state, clientPrefs: action.prefs };
+    case 'apply':
+      return {
+        ...state,
+        applications: [action.application, ...state.applications.filter((a) => a.jobId !== action.application.jobId)],
+      };
+    case 'updateApplication':
+      return {
+        ...state,
+        applications: state.applications.map((a) => (a.jobId === action.jobId ? { ...a, ...action.patch } : a)),
+      };
+    case 'withdraw':
+      return { ...state, applications: state.applications.filter((a) => a.jobId !== action.jobId) };
     case 'reset':
       return { ...initialState, hydrated: true };
   }
@@ -192,6 +229,14 @@ const STORAGE_KEY = 'staffconnect-mobile/v1';
 export const DEMO_MS_PER_HOUR = 6000;
 const MATCH_DELAY_MS = 5000;
 const OFFER_WINDOW_MS = 15000;
+const APPLICATION_SHORTLIST_MS = 8000;
+const APPLICATION_DECISION_MS = 18000;
+
+/** Converts an hourly rate into a job's pay unit (hour, day or month). */
+export function rateInUnit(hourly: number, unit: keyof typeof HOURS_PER_UNIT) {
+  const v = hourly * HOURS_PER_UNIT[unit];
+  return unit === 'hour' ? v : Math.round(v / 1000) * 1000;
+}
 
 export function makeId() {
   return Math.random().toString(36).slice(2, 10);
@@ -207,9 +252,8 @@ export function createClientJob(
   return { ...input, id: makeId(), createdAt: Date.now(), pin: makePin(), status: 'searching', travelMs: 20000 };
 }
 
-export function priceFor(serviceId: string, hours: number) {
-  const service = getService(serviceId);
-  const subtotal = service.hourlyRate * hours;
+export function priceFor(serviceId: string, hours: number, hourlyRate?: number) {
+  const subtotal = (hourlyRate ?? getService(serviceId).hourlyRate) * hours;
   const fee = Math.round(subtotal * SERVICE_FEE_RATE);
   return { subtotal, fee, total: subtotal + fee };
 }
@@ -293,7 +337,7 @@ function useSimulation(
         dispatch({
           type: 'updateClientJob',
           id: j.id,
-          patch: { status: 'accepted', acceptedAt: now, pro: proForService(j.serviceId) },
+          patch: { status: 'accepted', acceptedAt: now, pro: getPro(j.preferredProId) ?? proForService(j.serviceId) },
         });
       } else if (j.status === 'accepted' && j.acceptedAt && now - j.acceptedAt > j.travelMs) {
         dispatch({ type: 'updateClientJob', id: j.id, patch: { status: 'arrived', arrivedAt: now } });
@@ -323,6 +367,24 @@ function useSimulation(
       nextOfferAt.current = null;
     }
   }, [now, state, clientJob, providerJob, dispatch]);
+
+  // Hirers respond to job applications: shortlist, then hire if the asking pay fits.
+  useEffect(() => {
+    for (const a of state.applications) {
+      const job = getJob(a.jobId);
+      if (!job) continue;
+      if (a.status === 'applied' && now - a.appliedAt > APPLICATION_SHORTLIST_MS) {
+        dispatch({ type: 'updateApplication', jobId: a.jobId, patch: { status: 'shortlisted', updatedAt: now } });
+      } else if (a.status === 'shortlisted' && now - a.appliedAt > APPLICATION_DECISION_MS) {
+        const fits = a.rate <= job.payMax;
+        dispatch({
+          type: 'updateApplication',
+          jobId: a.jobId,
+          patch: { status: fits ? 'hired' : 'not_selected', updatedAt: now },
+        });
+      }
+    }
+  }, [now, state.applications, dispatch]);
 
   // Auto-approve provider applications after a short "review" in the demo.
   useEffect(() => {

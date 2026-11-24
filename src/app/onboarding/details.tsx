@@ -22,7 +22,7 @@ export default function DetailsScreen() {
     dispatch({ type: 'setProfile', profile: { name: name.trim(), phone: phone ?? '', state: st, area } });
     dispatch({ type: 'setRole', role: isProvider ? 'provider' : 'client' });
     if (router.canDismiss()) router.dismissAll();
-    router.replace(isProvider ? '/onboarding/provider' : '/client');
+    router.replace(isProvider ? '/onboarding/provider' : '/onboarding/needs');
   };
 
   return (
@@ -35,8 +35,8 @@ export default function DetailsScreen() {
             : 'We use your area to find help close to you.'
         }
         step={3}
-        total={4}
-        footer={<Button label={isProvider ? 'Continue' : 'Start booking'} disabled={!valid} onPress={finish} />}>
+        total={5}
+        footer={<Button label="Continue" disabled={!valid} onPress={finish} />}>
         <Field label="Full name" value={name} onChangeText={setName} placeholder="e.g. Ada Obi" autoFocus autoCapitalize="words" />
         <View style={{ gap: 10 }}>
           <T variant="caption" muted>

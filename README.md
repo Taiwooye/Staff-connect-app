@@ -15,8 +15,15 @@ Uber and Bolt ship separate apps for riders and drivers because the two sides do
 | Home | Map with nearby pros, plus "What do you need help with?" service grid | Map with a big **GO** button, today's earnings, acceptance rate |
 | Core action | Book: area, address, now or scheduled, hours, tasks, payment, price breakdown | Incoming job offer with a **15-second countdown ring**, take-home pay, distance, and accept/decline |
 | Live flow | Matching → pro on the way (live route and ETA) → arrived → share **start code** → in progress → rate and tip | Head to client (navigation banner) → I've arrived → enter client's **start code** → checklist → complete → rate client |
-| Tabs | Home · Bookings · Account | Work · Earnings · Profile |
-| Onboarding | Phone + OTP → name and area | Phone + OTP → name and area → services → work areas → rate and availability → bio → ID, selfie, address, and references → review → approval |
+| Tabs | Home · Bookings · Account | Work · Jobs · Earnings · Profile |
+| Onboarding | Phone + OTP → name and area → what you need → your matches | Phone + OTP → name and area → services → work areas → rate and availability → bio → ID, selfie, address, and references → review → approval |
+
+### Matching
+
+Both sides get suggestions ranked by a match score, with the reasons shown ([`src/lib/matching.ts`](src/lib/matching.ts)):
+
+- **Clients** say what help they need and how often (one-off, weekly, daily, live-in) at the end of onboarding, or later from Account. They see **"Your matches"**: professionals in their state ranked by services covered (45), location (30), working arrangement (15) and track record (10). They can open a profile and **book that pro directly** at the pro's own rate.
+- **Professionals** get a **Jobs** tab of longer-term openings from households, schools, events and businesses. Openings are ranked by service (45), work areas (30), schedule overlap (15) and whether the job pays their rate (10). Jobs scoring 60+ show as *Recommended*. Professionals apply with their own asking pay and a note, then track **Applied → Shortlisted → Hired**. In the demo, the hirer hires if the asking pay is within budget.
 
 People can switch sides from the Account tab ("Earn with StaffConnect" / "Switch to booking help"), much like Uber's "Drive with Uber".
 
@@ -54,10 +61,13 @@ src/app/                 Expo Router screens
   client/                client tabs (home, bookings, account)
   book/[service].tsx     booking sheet
   trip/[id].tsx          client live job tracking
-  provider/              provider tabs (work, earnings, profile)
+  provider/              provider tabs (work, jobs, earnings, profile)
+  matches.tsx            client match results
+  pro/[id].tsx           professional profile + direct booking
+  job/[id].tsx           job opening detail + application
   work/[id].tsx          provider active-job flow
 src/components/          UI kit, SVG city map, shared account view
-src/lib/                 theme palettes, service catalogue, store and simulation
+src/lib/                 theme palettes, catalogue (pros, job openings), matching, store and simulation
 ```
 
 ## Deploy

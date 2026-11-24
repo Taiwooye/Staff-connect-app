@@ -26,6 +26,10 @@ export default function ProviderTabs() {
           options={{ title: 'Work', tabBarIcon: ({ color, size }) => <Ionicons name="flash" color={color as string} size={size} /> }}
         />
         <Tabs.Screen
+          name="jobs"
+          options={{ title: 'Jobs', tabBarIcon: ({ color, size }) => <Ionicons name="briefcase-outline" color={color as string} size={size} /> }}
+        />
+        <Tabs.Screen
           name="earnings"
           options={{ title: 'Earnings', tabBarIcon: ({ color, size }) => <Ionicons name="wallet-outline" color={color as string} size={size} /> }}
         />

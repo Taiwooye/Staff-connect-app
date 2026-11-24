@@ -8,7 +8,7 @@ import { CityMap } from '@/components/city-map';
 import { useToast } from '@/components/toast';
 import { Avatar, Button, Card, Chip, DemoNote, Divider, IconButton, PaletteProvider, Row, shadow, Stars, T, tap } from '@/components/ui';
 import type { IconName } from '@/lib/catalog';
-import { getService } from '@/lib/catalog';
+import { getPro, getService } from '@/lib/catalog';
 import { type ClientJob, DEMO_MS_PER_HOUR, useNow, useStore } from '@/lib/store';
 import { clientPalette as p, formatNaira, radius } from '@/lib/theme';
 
@@ -89,11 +89,16 @@ function SheetContent({ job, now, travel, toast }: { job: ClientJob; now: number
   };
 
   if (job.status === 'searching') {
+    const preferred = getPro(job.preferredProId);
     const pct = Math.min(1, (now - job.createdAt) / 5000);
     return (
       <>
-        <T variant="title">Finding your pro…</T>
-        <T muted>We’re asking the best-rated {service.short.toLowerCase()} professionals near {job.area}.</T>
+        <T variant="title">{preferred ? `Asking ${preferred.name.split(' ')[0]}…` : 'Finding your pro…'}</T>
+        <T muted>
+          {preferred
+            ? `We’ve sent your request to ${preferred.name}. They usually reply within a few minutes.`
+            : `We’re asking the best-rated ${service.short.toLowerCase()} professionals near ${job.area}.`}
+        </T>
         <View style={styles.track}>
           <View style={[styles.trackFill, { width: `${Math.max(8, pct * 100)}%` }]} />
         </View>

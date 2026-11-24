@@ -53,7 +53,7 @@ function PhoneFlow({ role }: { role: 'client' | 'provider' }) {
         title="What's your phone number?"
         subtitle="We'll text a code to confirm it's you. Your number is only shared with someone once a job is confirmed."
         step={1}
-        total={4}
+        total={5}
         footer={
           <Button
             label="Send code"
@@ -99,7 +99,7 @@ function PhoneFlow({ role }: { role: 'client' | 'provider' }) {
       title="Enter the 4-digit code"
       subtitle={`Sent to +234 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`}
       step={2}
-      total={4}
+      total={5}
       onBack={() => {
         setStage('phone');
         setCode('');
