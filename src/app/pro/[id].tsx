@@ -59,7 +59,7 @@ export default function ProProfile() {
     <PaletteProvider palette={p}>
       <View style={{ flex: 1, backgroundColor: p.bg }}>
         <ScrollView contentContainerStyle={{ padding: 20, paddingTop: insets.top + 12, gap: 18, paddingBottom: 150 }}>
-          <IconButton icon="arrow-back" label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/client'))} />
+          <IconButton icon="arrow-back" label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace(state.profile ? '/client' : '/welcome'))} />
           <View style={{ alignItems: 'center', gap: 8 }}>
             <Avatar initials={pro.initials} color={pro.color} size={88} />
             <T variant="title">{pro.name}</T>
@@ -160,6 +160,12 @@ export default function ProProfile() {
         <View style={{ position: 'absolute', left: 20, right: 20, bottom: insets.bottom + 16, gap: 8 }}>
           {job ? (
             <Button label={`Choose ${first} for this job`} icon="checkmark-circle" onPress={() => setConfirming(pro)} />
+          ) : !state.profile ? (
+            <Button
+              label={`Sign up to book ${first}`}
+              icon="person-add"
+              onPress={() => router.push({ pathname: '/onboarding/role', params: { role: 'client' } })}
+            />
           ) : (
             <Button
               label={`Book ${first}`}

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -36,7 +36,9 @@ const options: {
 ];
 
 export default function RolePicker() {
-  const [role, setRole] = useState<Role | null>(null);
+  // The landing page can preselect a side ("I need help" / "I want to work").
+  const params = useLocalSearchParams<{ role?: string }>();
+  const [role, setRole] = useState<Role | null>(params.role === 'client' || params.role === 'provider' ? params.role : null);
 
   return (
     <FormScreen

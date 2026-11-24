@@ -6,6 +6,19 @@ It is built with **Expo (React Native + Expo Router)**. The same code runs on iO
 
 **Live demo:** https://staffconnect-mobile.vercel.app. Every push to `main` redeploys automatically through Vercel's GitHub integration.
 
+## Tech stack
+
+The app is written in **TypeScript** with **React Native** and **Expo** (SDK 58), using **Expo Router** for navigation. One codebase builds the iOS app, the Android app and the hosted web version.
+
+## Landing page
+
+Before signing up, visitors see a landing page ([`src/app/welcome.tsx`](src/app/welcome.tsx)):
+
+- A hero with two clear choices: **I need help** and **I want to work**
+- The services offered, with starting rates
+- **Meet some of our pros:** profile cards that open full public profiles with reviews, plus a searchable **Browse all professionals** directory ([`src/app/pros.tsx`](src/app/pros.tsx))
+- How it works (for clients / for professionals), safety features, simple pricing, sample reviews, and a final sign-up call to action
+
 ## Two apps in one, like Uber and Bolt
 
 Uber and Bolt ship separate apps for riders and drivers because the two sides do different jobs. A rider *requests and tracks*. A driver *goes online, decides on offers in seconds, and completes work*. StaffConnect follows the same split. The role a person chooses during onboarding decides which interface they get, and each side has its own navigation and visual identity.
@@ -86,7 +99,8 @@ npx expo export -p web  # static web build in dist/
 
 ```
 src/app/                 Expo Router screens
-  welcome.tsx            intro carousel
+  welcome.tsx            landing page (before sign-up)
+  pros.tsx               public directory of professionals
   onboarding/            role → phone/OTP → details → provider application → review
   client/                client tabs (home, bookings, account)
   book/[service].tsx     booking sheet
