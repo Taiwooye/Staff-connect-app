@@ -12,12 +12,13 @@ The app is written in **TypeScript** with **React Native** and **Expo** (SDK 58)
 
 ## Landing page
 
-Before signing up, visitors see a landing page ([`src/app/welcome.tsx`](src/app/welcome.tsx)):
+Before signing up, visitors see a simple landing page ([`src/app/welcome.tsx`](src/app/welcome.tsx)), with a profile layout inspired by tranqbay.health:
 
-- A hero with two clear choices: **I need help** and **I want to work**
-- The services offered, with starting rates
-- **Meet some of our pros:** profile cards that open full public profiles with reviews, plus a searchable **Browse all professionals** directory ([`src/app/pros.tsx`](src/app/pros.tsx))
-- How it works (for clients / for professionals), safety features, simple pricing, sample reviews, and a final sign-up call to action
+- **Hero:** one headline, one line of copy, a single **Find help** button and a "Join as a pro" link
+- **Service chips** that open the directory filtered to that service
+- **Meet our pros:** image-first profile cards (portrait, name, role, ★ rating, "From ₦…/hr", area and schedule tags). Tap a card for the full public profile with reviews.
+- **How it works** in three numbered steps, a trust strip, and one short section for professionals
+- **Browse all professionals** ([`src/app/pros.tsx`](src/app/pros.tsx)): the same cards in a grid, with search and state/service filters
 
 ## Two apps in one, like Uber and Bolt
 

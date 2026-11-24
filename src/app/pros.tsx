@@ -1,20 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Avatar, Button, Card, Chip, IconButton, PaletteProvider, Row, T } from '@/components/ui';
+import { ProCard } from '@/components/pro-card';
+import { Button, Card, Chip, IconButton, PaletteProvider, Row, T } from '@/components/ui';
 import { demoPros, getService, launchStates, ratingWith, services } from '@/lib/catalog';
 import { useStore } from '@/lib/store';
-import { clientPalette as p, formatNaira, radius } from '@/lib/theme';
+import { clientPalette as p, radius } from '@/lib/theme';
 
 /** Public directory of professionals. Anyone can browse before signing up. */
 export default function ProsDirectory() {
   const insets = useSafeAreaInsets();
   const { state } = useStore();
   const [query, setQuery] = useState('');
-  const [svc, setSvc] = useState<string | null>(null);
+  const params = useLocalSearchParams<{ service?: string }>();
+  const [svc, setSvc] = useState<string | null>(params.service ?? null);
   const [st, setSt] = useState<string | null>(state.profile?.state ?? null);
 
   const q = query.trim().toLowerCase();
@@ -31,7 +33,7 @@ export default function ProsDirectory() {
           <IconButton icon="arrow-back" label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
           <View style={{ gap: 4 }}>
             <T variant="title">Our professionals</T>
-            <T muted>Every profile shows experience, rates and reviews. Tap one to learn more.</T>
+            <T muted>Tap a profile to see experience, reviews and prices.</T>
           </View>
 
           <Row gap={8} style={{ height: 48, borderRadius: radius.pill, backgroundColor: p.surface, borderWidth: 1, borderColor: p.border, paddingHorizontal: 14 }}>
@@ -76,41 +78,11 @@ export default function ProsDirectory() {
             </Card>
           )}
 
-          {list.map(({ pro, rating }) => (
-            <Pressable key={pro.id} onPress={() => router.push(`/pro/${pro.id}`)} accessibilityRole="button" accessibilityLabel={`View ${pro.name}`}>
-              <Card style={{ gap: 10 }}>
-                <Row style={{ alignItems: 'flex-start' }}>
-                  <Avatar initials={pro.initials} color={pro.color} size={56} />
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <T variant="heading">{pro.name}</T>
-                    <Row gap={6}>
-                      <Ionicons name="star" size={13} color="#C98A0B" />
-                      <T variant="label">{rating.average.toFixed(1)}</T>
-                      <T variant="caption" muted>
-                        ({rating.count}) · {pro.years} yrs
-                      </T>
-                    </Row>
-                    <T variant="caption" muted>
-                      {pro.area}, {pro.state} · {pro.arrangement === 'Flexible' ? 'Flexible' : pro.arrangement}
-                    </T>
-                  </View>
-                  <T variant="label">{formatNaira(pro.hourlyRate)}/hr</T>
-                </Row>
-                <T muted numberOfLines={2}>
-                  {pro.about}
-                </T>
-                <Row gap={6} style={{ flexWrap: 'wrap' }}>
-                  {pro.services.map((s) => (
-                    <View key={s} style={{ backgroundColor: getService(s).tint, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 }}>
-                      <T variant="caption" style={{ fontWeight: '600' }}>
-                        {getService(s).label}
-                      </T>
-                    </View>
-                  ))}
-                </Row>
-              </Card>
-            </Pressable>
-          ))}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14 }}>
+            {list.map(({ pro }) => (
+              <ProCard key={pro.id} pro={pro} width="48%" />
+            ))}
+          </View>
           <T variant="caption" muted style={{ textAlign: 'center' }}>
             Profiles are fictional examples.
           </T>

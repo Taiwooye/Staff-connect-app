@@ -166,6 +166,9 @@ export function Chip({
   const p = usePalette();
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: !!selected }}
       onPress={() => {
         tap();
         onPress?.();
