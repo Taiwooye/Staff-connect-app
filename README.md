@@ -1,56 +1,70 @@
-# Welcome to your Expo app 👋
+# StaffConnect Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+The mobile app for [StaffConnect](https://github.com/Taiwooye/Staff-connect), a marketplace that connects households and businesses in Lagos and Oyo with home-help professionals.
 
-## Get started
+It is built with **Expo (React Native + Expo Router)**. The same code runs on iOS and Android, and exports to the web for a hosted demo.
 
-1. Install dependencies
+## Two apps in one, like Uber and Bolt
 
-   ```bash
-   npm install
-   ```
+Uber and Bolt ship separate apps for riders and drivers because the two sides do different jobs. A rider *requests and tracks*. A driver *goes online, decides on offers in seconds, and completes work*. StaffConnect follows the same split. The role a person chooses during onboarding decides which interface they get, and each side has its own navigation and visual identity.
 
-2. Start the app
+| | **Client app** (light, emerald) | **Provider app** (dark "work mode", amber) |
+|---|---|---|
+| Home | Map with nearby pros, plus "What do you need help with?" service grid | Map with a big **GO** button, today's earnings, acceptance rate |
+| Core action | Book: area, address, now or scheduled, hours, tasks, payment, price breakdown | Incoming job offer with a **15-second countdown ring**, take-home pay, distance, and accept/decline |
+| Live flow | Matching → pro on the way (live route and ETA) → arrived → share **start code** → in progress → rate and tip | Head to client (navigation banner) → I've arrived → enter client's **start code** → checklist → complete → rate client |
+| Tabs | Home · Bookings · Account | Work · Earnings · Profile |
+| Onboarding | Phone + OTP → name and area | Phone + OTP → name and area → services → work areas → rate and availability → bio → ID, selfie, address, and references → review → approval |
 
-   ```bash
-   npx expo start
-   ```
+People can switch sides from the Account tab ("Earn with StaffConnect" / "Switch to booking help"), much like Uber's "Drive with Uber".
 
-In the output, you'll find options to open the app in a
+## Demo mode
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+There is no backend yet. A simulation in [`src/lib/store.tsx`](src/lib/store.tsx) plays the other side of the marketplace, so either app can be tried on a single device:
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- Client: a demo pro accepts after about 5 seconds, travels for about 20 seconds, and the job runs at a compressed speed (each booked hour takes a few seconds).
+- Provider: the application is auto-approved after about 6 seconds. While online, job offers arrive every few seconds.
+- The OTP code is **1234**. The client's start code is shown as a hint in the provider app.
+- All people, ratings, and jobs are fictional. Data is stored on the device with AsyncStorage. No money moves, and payments are recorded only.
 
-## Get a fresh project
-
-When you're ready, run:
+## Run it
 
 ```bash
-npm run reset-project
+npm install
+npx expo start          # press i / a, or scan the QR code with Expo Go
+npx expo start --web    # browser
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+## Checks
 
-### Other setup steps
+```bash
+npx tsc --noEmit
+npx eslint src
+npx expo export -p web  # static web build in dist/
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Project layout
 
-## Learn more
+```
+src/app/                 Expo Router screens
+  welcome.tsx            intro carousel
+  onboarding/            role → phone/OTP → details → provider application → review
+  client/                client tabs (home, bookings, account)
+  book/[service].tsx     booking sheet
+  trip/[id].tsx          client live job tracking
+  provider/              provider tabs (work, earnings, profile)
+  work/[id].tsx          provider active-job flow
+src/components/          UI kit, SVG city map, shared account view
+src/lib/                 theme palettes, service catalogue, store and simulation
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Deploy
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+The web demo deploys to Vercel with [`vercel.json`](vercel.json), which runs `expo export -p web` and serves `dist/` as a single-page app. For store builds, use EAS (`npx eas-cli@latest build`).
 
-## Join the community
+## Next steps toward production
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Replace the simulation with Supabase (the website already uses it): jobs table, realtime job status, and provider presence.
+- Real maps and location (`react-native-maps` + `expo-location`) on native.
+- Push notifications for job offers (`expo-notifications`), plus SMS OTP through Supabase Auth.
+- Real document verification and a payments provider (e.g. Paystack) when money handling is in scope.
