@@ -4,8 +4,9 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityMap } from '@/components/city-map';
+import { PayPanel } from '@/components/pay-panel';
 import { useToast } from '@/components/toast';
-import { Avatar, Button, Card, DemoNote, Divider, IconButton, PaletteProvider, Row, shadow, Stars, T, tap } from '@/components/ui';
+import { Avatar, Button, Card, DemoNote, IconButton, PaletteProvider, Row, shadow, Stars, T, tap } from '@/components/ui';
 import type { IconName } from '@/lib/catalog';
 import { getPro, getService } from '@/lib/catalog';
 import { type ClientJob, DEMO_MS_PER_HOUR, useNow, useStore } from '@/lib/store';
@@ -215,55 +216,7 @@ function SheetContent({ job, now, travel, toast }: { job: ClientJob; now: number
     );
   }
 
-  return <Completed job={job} />;
-}
-
-function Completed({ job }: { job: ClientJob }) {
-  const { dispatch } = useStore();
-  const pro = job.pro!;
-  const first = pro.name.split(' ')[0];
-  return (
-    <>
-      <View style={{ alignItems: 'center', gap: 8 }}>
-        <View style={styles.doneBadge}>
-          <Ionicons name="checkmark" size={36} color="#fff" />
-        </View>
-        <T variant="title" style={{ textAlign: 'center' }}>
-          Job complete
-        </T>
-        <T muted style={{ textAlign: 'center' }}>
-          {first} finished your {getService(job.serviceId).label.toLowerCase()}. Please pay {job.payment === 'cash' ? 'in cash' : 'by bank transfer'}.
-        </T>
-      </View>
-      <Card style={{ gap: 8 }}>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <T muted>
-            {formatNaira(job.subtotal / job.hours)} × {job.hours} hrs
-          </T>
-          <T variant="label">{formatNaira(job.subtotal)}</T>
-        </Row>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <T muted>Service fee</T>
-          <T variant="label">{formatNaira(job.fee)}</T>
-        </Row>
-        <Divider />
-        <Row style={{ justifyContent: 'space-between' }}>
-          <T variant="label">Total to pay {first}</T>
-          <T variant="heading">{formatNaira(job.total)}</T>
-        </Row>
-      </Card>
-      <Button label={`Rate ${first}`} icon="star" onPress={() => router.push(`/rate/${job.id}`)} />
-      <Button
-        label="Rate later"
-        variant="ghost"
-        size="md"
-        onPress={() => {
-          dispatch({ type: 'updateClientJob', id: job.id, patch: { reviewSkipped: true } });
-          router.replace('/client');
-        }}
-      />
-    </>
-  );
+  return <PayPanel job={job} toast={toast} />;
 }
 
 function ProCard({ job, toast }: { job: ClientJob; toast: (m: string) => void }) {
@@ -369,6 +322,5 @@ const styles = StyleSheet.create({
   etaBadge: { width: 60, height: 60, borderRadius: 18, backgroundColor: p.accent, alignItems: 'center', justifyContent: 'center' },
   action: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 10, borderRadius: radius.md, backgroundColor: p.surfaceAlt },
   pinDigit: { width: 34, height: 42, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  doneBadge: { width: 64, height: 64, borderRadius: 32, backgroundColor: p.accent, alignItems: 'center', justifyContent: 'center' },
   svcIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });

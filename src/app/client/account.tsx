@@ -11,7 +11,7 @@ import { clientPalette as p, formatNaira } from '@/lib/theme';
 export default function ClientAccount() {
   const { state } = useStore();
   const done = state.clientJobs.filter((j) => j.status === 'completed');
-  const spent = done.reduce((sum, j) => sum + j.total + (j.tip ?? 0), 0);
+  const spent = done.reduce((sum, j) => sum + (j.paid?.amount ?? 0), 0);
   return (
     <AccountView mode="client">
       <Row gap={12}>

@@ -15,8 +15,18 @@ Uber and Bolt ship separate apps for riders and drivers because the two sides do
 | Home | Map with nearby pros, plus "What do you need help with?" service grid | Map with a big **GO** button, today's earnings, acceptance rate |
 | Core action | Book: area, address, now or scheduled, hours, tasks, payment, price breakdown | Incoming job offer with a **15-second countdown ring**, take-home pay, distance, and accept/decline |
 | Live flow | **Compare available pros and choose one yourself** → they accept → on the way (live route and ETA) → arrived → share **start code** → in progress → **rate** (stars, tags, comment, tip) | Head to client (navigation banner) → I've arrived → enter client's **start code** → checklist → complete → rate client |
-| Tabs | Home · Bookings · Account | Work · Jobs · Earnings · Profile |
+| Tabs | Home · Bookings · Account | Work · Jobs · Wallet · Profile |
 | Onboarding | Phone + OTP → name and area → what you need → your matches | Phone + OTP → name and area → services → work areas → rate and availability → bio → ID, selfie, address, and references → review → approval |
+
+### Payments and payouts
+
+All money rules live in [`src/lib/money.ts`](src/lib/money.ts):
+
+- **10% on every payment, taken out of the price, not added on top.** If a client pays ₦30,000, the worker receives ₦27,000 and StaffConnect keeps ₦3,000.
+- **Bank transfer is the default.** After the job, the client taps **Pay**, can add a tip, and transfers to a unique account for that payment. The worker is credited instantly, minus 10%.
+- **Cash is allowed.** The worker keeps the cash, and the 10% fee is deducted from their StaffConnect balance. The balance can go negative, and the debt is recovered from later transfer earnings.
+- **Worker payouts:** the payout balance is paid **automatically every Friday at 9:00 AM** to the worker's bank account. Workers can **withdraw any time**, or **move money to their Wallet**, which is skipped by Friday payouts until they withdraw it. Withdrawals are free.
+- **StaffConnect revenue:** every 10% fee is recorded in the platform ledger (Account → *StaffConnect revenue*).
 
 ### You choose, not the app
 

@@ -133,7 +133,7 @@ function Wizard() {
     },
     {
       title: 'Set your rate & hours',
-      subtitle: 'Clients see your hourly rate. StaffConnect keeps a 15% service fee.',
+      subtitle: 'Clients see your hourly rate. StaffConnect keeps 10% of every payment.',
       valid: availability.length > 0,
       body: (
         <>
@@ -147,7 +147,7 @@ function Wizard() {
               <RoundBtn icon="add" onPress={() => setRate(hourly + 250)} />
             </Row>
             <T variant="caption" muted>
-              You take home about {formatNaira(hourly * 0.85)}/hr · Suggested {formatNaira(suggested)}
+              You take home {formatNaira(hourly * 0.9)}/hr after the 10% fee · Suggested {formatNaira(suggested)}
             </T>
           </Card>
           <View style={{ gap: 10 }}>

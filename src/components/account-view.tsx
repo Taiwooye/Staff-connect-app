@@ -142,6 +142,11 @@ export function AccountView({ mode, children }: { mode: 'client' | 'provider'; c
             Sign out & reset demo
           </T>
         </Pressable>
+        <Pressable onPress={() => router.push('/admin')} style={{ alignItems: 'center', padding: 6 }}>
+          <T variant="caption" color={p.accent}>
+            StaffConnect revenue (admin demo)
+          </T>
+        </Pressable>
         <T variant="caption" muted style={{ textAlign: 'center' }}>
           StaffConnect mobile prototype · All profiles and jobs are fictional and stay on this device.
         </T>

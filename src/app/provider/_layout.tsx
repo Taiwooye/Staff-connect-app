@@ -31,7 +31,7 @@ export default function ProviderTabs() {
         />
         <Tabs.Screen
           name="earnings"
-          options={{ title: 'Earnings', tabBarIcon: ({ color, size }) => <Ionicons name="wallet-outline" color={color as string} size={size} /> }}
+          options={{ title: 'Wallet', tabBarIcon: ({ color, size }) => <Ionicons name="wallet-outline" color={color as string} size={size} /> }}
         />
         <Tabs.Screen
           name="account"

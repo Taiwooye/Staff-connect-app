@@ -237,5 +237,3 @@ export const demoClients = [
   { name: 'Yetunde M.', rating: 4.9 },
 ];
 
-export const SERVICE_FEE_RATE = 0.1; // charged to clients
-export const PLATFORM_COMMISSION = 0.15; // deducted from provider pay

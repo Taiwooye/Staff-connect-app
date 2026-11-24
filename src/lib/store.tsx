@@ -17,11 +17,10 @@ import {
   getPro,
   getService,
   HOURS_PER_UNIT,
-  PLATFORM_COMMISSION,
-  SERVICE_FEE_RATE,
   services,
 } from './catalog';
 import type { ClientPrefs } from './matching';
+import { lastPayoutRun, splitPayment } from './money';
 
 export type Role = 'client' | 'provider';
 
@@ -97,6 +96,7 @@ export type ClientJob = {
   rating?: number;
   tip?: number;
   reviewSkipped?: boolean;
+  paid?: { method: 'cash' | 'transfer'; amount: number; fee: number; toPro: number; at: number };
 };
 
 export type Offer = {
@@ -109,6 +109,7 @@ export type Offer = {
   hours: number;
   gross: number;
   pay: number;
+  payment: 'cash' | 'transfer';
   tasks: string[];
   pin: string;
   createdAt: number;
@@ -140,6 +141,32 @@ type State = {
   applications: Application[];
   bankAccount?: BankAccount;
   reviews: Review[];
+  balance: number; // paid out automatically on Fridays; negative when cash-job fees are owed
+  wallet: number; // kept in StaffConnect, never auto-paid; withdraw any time
+  ledger: LedgerEntry[];
+  payoutCheckedAt?: number;
+  platformFees: PlatformFee[];
+};
+
+export type LedgerKind = 'earning' | 'cash_fee' | 'friday_payout' | 'withdrawal' | 'to_wallet';
+
+export type LedgerEntry = {
+  id: string;
+  at: number;
+  kind: LedgerKind;
+  bucket: 'balance' | 'wallet';
+  amount: number; // signed change to the bucket
+  label: string;
+};
+
+/** StaffConnect's own revenue: the 10% kept from every payment. */
+export type PlatformFee = {
+  id: string;
+  at: number;
+  amount: number;
+  paymentAmount: number;
+  method: 'cash' | 'transfer';
+  description: string;
 };
 
 export type ApplicationStatus = 'applied' | 'shortlisted' | 'hired' | 'not_selected';
@@ -162,6 +189,10 @@ const initialState: State = {
   offersAccepted: 0,
   applications: [],
   reviews: [],
+  balance: 0,
+  wallet: 0,
+  ledger: [],
+  platformFees: [],
 };
 
 type Action =
@@ -180,12 +211,17 @@ type Action =
   | { type: 'setClientPrefs'; prefs: ClientPrefs }
   | { type: 'apply'; application: Application }
   | { type: 'updateApplication'; jobId: string; patch: Partial<Application> }
-  | { type: 'withdraw'; jobId: string }
+  | { type: 'withdrawApplication'; jobId: string }
   | { type: 'updateProfile'; patch: Partial<Profile> }
   | { type: 'updateProviderProfile'; patch: Partial<ProviderProfile> }
   | { type: 'setBank'; bank?: BankAccount }
   | { type: 'choosePro'; jobId: string; pro: DemoPro; now: number }
-  | { type: 'rateJob'; jobId: string; review: Review; tip: number }
+  | { type: 'rateJob'; jobId: string; review: Review }
+  | { type: 'payClientJob'; jobId: string; method: 'cash' | 'transfer'; tip: number; now: number; id: string }
+  | { type: 'completeProviderJob'; jobId: string; now: number; ids: [string, string] }
+  | { type: 'moveToWallet'; amount: number; now: number; id: string }
+  | { type: 'withdraw'; from: 'balance' | 'wallet'; amount: number; now: number; id: string }
+  | { type: 'fridayPayout'; now: number; id: string }
   | { type: 'reset' };
 
 function reducer(state: State, action: Action): State {
@@ -242,8 +278,106 @@ function reducer(state: State, action: Action): State {
         ...state,
         applications: state.applications.map((a) => (a.jobId === action.jobId ? { ...a, ...action.patch } : a)),
       };
-    case 'withdraw':
+    case 'withdrawApplication':
       return { ...state, applications: state.applications.filter((a) => a.jobId !== action.jobId) };
+    case 'payClientJob': {
+      const job = state.clientJobs.find((j) => j.id === action.jobId);
+      if (!job || job.paid) return state;
+      const amount = job.total + action.tip;
+      const { fee, toWorker } = splitPayment(amount);
+      const who = job.pro?.name ?? 'the pro';
+      return {
+        ...state,
+        clientJobs: state.clientJobs.map((j) =>
+          j.id === job.id
+            ? { ...j, tip: action.tip, paid: { method: action.method, amount, fee, toPro: toWorker, at: action.now } }
+            : j,
+        ),
+        platformFees: [
+          {
+            id: action.id,
+            at: action.now,
+            amount: fee,
+            paymentAmount: amount,
+            method: action.method,
+            description:
+              action.method === 'cash'
+                ? `Cash paid to ${who} · fee taken from their balance`
+                : `Transfer from ${state.profile?.name ?? 'client'} to ${who}`,
+          },
+          ...state.platformFees,
+        ],
+      };
+    }
+    case 'completeProviderJob': {
+      const job = state.providerJobs.find((j) => j.id === action.jobId);
+      if (!job || job.status === 'completed') return state;
+      const { fee, toWorker } = splitPayment(job.gross);
+      const cash = job.payment === 'cash';
+      const me = state.profile?.name ?? 'worker';
+      const entry: LedgerEntry = cash
+        ? { id: action.ids[0], at: action.now, kind: 'cash_fee', bucket: 'balance', amount: -fee, label: `10% fee on cash job · ${job.clientName}` }
+        : { id: action.ids[0], at: action.now, kind: 'earning', bucket: 'balance', amount: toWorker, label: `Transfer from ${job.clientName}` };
+      return {
+        ...state,
+        providerJobs: state.providerJobs.map((j) => (j.id === job.id ? { ...j, status: 'completed', completedAt: action.now } : j)),
+        balance: state.balance + entry.amount,
+        ledger: [entry, ...state.ledger],
+        payoutCheckedAt: state.payoutCheckedAt ?? action.now,
+        platformFees: [
+          {
+            id: action.ids[1],
+            at: action.now,
+            amount: fee,
+            paymentAmount: job.gross,
+            method: job.payment,
+            description: cash ? `Cash paid to ${me} · fee taken from their balance` : `Transfer from ${job.clientName} to ${me}`,
+          },
+          ...state.platformFees,
+        ],
+      };
+    }
+    case 'moveToWallet': {
+      const amount = Math.min(action.amount, state.balance);
+      if (amount <= 0) return state;
+      return {
+        ...state,
+        balance: state.balance - amount,
+        wallet: state.wallet + amount,
+        ledger: [
+          { id: action.id, at: action.now, kind: 'to_wallet', bucket: 'wallet', amount, label: 'Moved to wallet (skips Friday payout)' },
+          ...state.ledger,
+        ],
+      };
+    }
+    case 'withdraw': {
+      const available = action.from === 'balance' ? state.balance : state.wallet;
+      const amount = Math.min(action.amount, available);
+      if (amount <= 0 || !state.bankAccount) return state;
+      const to = `${state.bankAccount.bank} ····${state.bankAccount.accountNumber.slice(-4)}`;
+      return {
+        ...state,
+        balance: action.from === 'balance' ? state.balance - amount : state.balance,
+        wallet: action.from === 'wallet' ? state.wallet - amount : state.wallet,
+        ledger: [
+          { id: action.id, at: action.now, kind: 'withdrawal', bucket: action.from, amount: -amount, label: `Withdrawal to ${to}` },
+          ...state.ledger,
+        ],
+      };
+    }
+    case 'fridayPayout': {
+      if (state.balance <= 0 || !state.bankAccount) return { ...state, payoutCheckedAt: action.now };
+      const to = `${state.bankAccount.bank} ····${state.bankAccount.accountNumber.slice(-4)}`;
+      return {
+        ...state,
+        balance: 0,
+        payoutCheckedAt: action.now,
+        ledger: [
+          { id: action.id, at: action.now, kind: 'friday_payout', bucket: 'balance', amount: -state.balance, label: `Friday payout to ${to}` },
+          ...state.ledger,
+        ],
+      };
+    }
     case 'updateProfile':
       return state.profile ? { ...state, profile: { ...state.profile, ...action.patch } } : state;
     case 'updateProviderProfile':
@@ -263,7 +397,7 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         clientJobs: state.clientJobs.map((j) =>
-          j.id === action.jobId ? { ...j, rating: action.review.rating, tip: action.tip } : j,
+          j.id === action.jobId ? { ...j, rating: action.review.rating } : j,
         ),
         reviews: [action.review, ...state.reviews.filter((r) => r.jobId !== action.jobId)],
       };
@@ -311,8 +445,9 @@ export function createClientJob(
 
 export function priceFor(serviceId: string, hours: number, hourlyRate?: number) {
   const subtotal = (hourlyRate ?? getService(serviceId).hourlyRate) * hours;
-  const fee = Math.round(subtotal * SERVICE_FEE_RATE);
-  return { subtotal, fee, total: subtotal + fee };
+  const { fee, toWorker } = splitPayment(subtotal);
+  // The client pays the job price; StaffConnect's 10% comes out of it, not on top.
+  return { subtotal, fee, total: subtotal, toPro: toWorker };
 }
 
 type Ctx = {
@@ -340,7 +475,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   const activeClientJob = state.clientJobs.find(
-    (j) => j.status !== 'cancelled' && (j.status !== 'completed' || (j.rating === undefined && !j.reviewSkipped)),
+    (j) => j.status !== 'cancelled' && (j.status !== 'completed' || !j.paid || (j.rating === undefined && !j.reviewSkipped)),
   );
   const activeProviderJob = state.providerJobs.find(
     (j) => j.status !== 'completed' || j.clientRatingGiven === undefined,
@@ -441,6 +576,13 @@ function useSimulation(
     }
   }, [now, state.applications, dispatch]);
 
+  // Automatic Friday payouts: once a Friday 9:00 AM run has passed since the last check,
+  // the whole positive balance is paid to the worker's bank account.
+  useEffect(() => {
+    if (!state.hydrated || state.payoutCheckedAt === undefined) return;
+    if (state.payoutCheckedAt < lastPayoutRun(now)) dispatch(fridayPayoutAction());
+  }, [now, state.hydrated, state.payoutCheckedAt, dispatch]);
+
   // Auto-approve provider applications after a short "review" in the demo.
   useEffect(() => {
     const pp = state.providerProfile;
@@ -470,7 +612,8 @@ function makeOffer(state: State, now: number): Offer {
     distanceKm: Math.round((0.8 + Math.random() * 4.5) * 10) / 10,
     hours,
     gross,
-    pay: Math.round(gross * (1 - PLATFORM_COMMISSION)),
+    pay: splitPayment(gross).toWorker,
+    payment: Math.random() < 0.7 ? 'transfer' : 'cash',
     tasks: shuffled.slice(0, 2 + Math.floor(Math.random() * 2)),
     pin: makePin(),
     createdAt: now,
@@ -496,12 +639,11 @@ export function chooseProAction(jobId: string, pro: DemoPro): Action {
 
 export function rateJobAction(
   job: Pick<ClientJob, 'id'> & { pro?: DemoPro },
-  input: { rating: number; tags: string[]; comment: string; tip: number },
+  input: { rating: number; tags: string[]; comment: string },
 ): Action {
   return {
     type: 'rateJob',
     jobId: job.id,
-    tip: input.tip,
     review: {
       id: makeId(),
       proId: job.pro?.id ?? '',
@@ -512,4 +654,24 @@ export function rateJobAction(
       at: Date.now(),
     },
   };
+}
+
+export function payClientJobAction(jobId: string, method: 'cash' | 'transfer', tip: number): Action {
+  return { type: 'payClientJob', jobId, method, tip, now: Date.now(), id: makeId() };
+}
+
+export function completeProviderJobAction(jobId: string): Action {
+  return { type: 'completeProviderJob', jobId, now: Date.now(), ids: [makeId(), makeId()] };
+}
+
+export function moveToWalletAction(amount: number): Action {
+  return { type: 'moveToWallet', amount, now: Date.now(), id: makeId() };
+}
+
+export function withdrawAction(from: 'balance' | 'wallet', amount: number): Action {
+  return { type: 'withdraw', from, amount, now: Date.now(), id: makeId() };
+}
+
+export function fridayPayoutAction(): Action {
+  return { type: 'fridayPayout', now: Date.now(), id: makeId() };
 }

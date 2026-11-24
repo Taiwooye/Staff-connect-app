@@ -22,11 +22,21 @@ export default function Activity() {
   const insets = useSafeAreaInsets();
   const { state, activeClientJob } = useStore();
   const jobs = state.clientJobs;
-  const toRate = jobs.filter((j) => j.status === 'completed' && j.pro && j.rating === undefined);
+  const toRate = jobs.filter((j) => j.status === 'completed' && j.paid && j.pro && j.rating === undefined);
+  const unpaid = jobs.filter((j) => j.status === 'completed' && j.pro && !j.paid);
 
   return (
     <ScrollView style={{ backgroundColor: p.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 16, gap: 14, paddingBottom: 40 }}>
       <T variant="title">Bookings</T>
+
+      {unpaid.length > 0 && (
+        <Card style={{ borderColor: p.accent, gap: 4 }}>
+          <Row gap={8}>
+            <Ionicons name="card" size={18} color={p.accent} />
+            <T variant="label">{unpaid.length === 1 ? '1 booking is waiting for payment' : `${unpaid.length} bookings are waiting for payment`}</T>
+          </Row>
+        </Card>
+      )}
 
       {toRate.length > 0 && (
         <Card style={{ backgroundColor: p.accentSoft, borderColor: p.accentSoft, gap: 4 }}>
@@ -56,7 +66,8 @@ export default function Activity() {
       {jobs.map((j) => {
         const s = getService(j.serviceId);
         const live = activeClientJob?.id === j.id && j.status !== 'completed';
-        const needsRating = j.status === 'completed' && j.pro && j.rating === undefined;
+        const needsPay = j.status === 'completed' && j.pro && !j.paid;
+        const needsRating = j.status === 'completed' && j.paid && j.pro && j.rating === undefined;
         return (
           <Pressable key={j.id} disabled={!live} onPress={() => router.push(clientJobHref(j))}>
             <Card style={{ gap: 12, borderColor: live || needsRating ? p.accent : p.border }}>
@@ -71,9 +82,9 @@ export default function Activity() {
                   </T>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <T variant="label">{formatNaira(j.total + (j.tip ?? 0))}</T>
+                  <T variant="label">{formatNaira(j.paid?.amount ?? j.total)}</T>
                   <T variant="caption" color={j.status === 'cancelled' ? p.danger : live ? p.accent : p.textMuted}>
-                    {label[j.status]}
+                    {j.status === 'completed' && !j.paid ? 'Unpaid' : j.paid ? `Paid · ${j.paid.method === 'cash' ? 'cash' : 'transfer'}` : label[j.status]}
                   </T>
                 </View>
               </Row>
@@ -96,6 +107,9 @@ export default function Activity() {
                 </Row>
               )}
 
+              {needsPay && (
+                <Button label={`Pay ${formatNaira(j.total)}`} icon="card" size="md" onPress={() => router.push(`/trip/${j.id}`)} />
+              )}
               {needsRating && (
                 <Button label={`Rate ${j.pro!.name.split(' ')[0]}`} icon="star" size="md" onPress={() => router.push(`/rate/${j.id}`)} />
               )}

@@ -7,12 +7,11 @@ import { Field, FormScreen } from '@/components/form-screen';
 import { Avatar, Button, Chip, PaletteProvider, Row, T, tap } from '@/components/ui';
 import { getService } from '@/lib/catalog';
 import { rateJobAction, useStore } from '@/lib/store';
-import { clientPalette as p, formatNaira } from '@/lib/theme';
+import { clientPalette as p } from '@/lib/theme';
 
 const STAR_LABELS = ['', 'Poor', 'Fair', 'Okay', 'Good', 'Excellent'];
 const PRAISE = ['On time', 'Very thorough', 'Friendly', 'Great communication', 'Respectful', 'Good value'];
 const ISSUES = ['Arrived late', 'Missed tasks', 'Poor communication', 'Not as described', 'Unprofessional'];
-const TIPS = [0, 500, 1000, 2000];
 
 export default function RateScreen() {
   return (
@@ -29,7 +28,6 @@ function Rate() {
   const [stars, setStars] = useState(0);
   const [tags, setTags] = useState<string[]>([]);
   const [comment, setComment] = useState('');
-  const [tip, setTip] = useState(0);
   const [done, setDone] = useState(false);
 
   if (!job?.pro) {
@@ -54,7 +52,6 @@ function Rate() {
               <Ionicons key={n} name={n <= stars ? 'star' : 'star-outline'} size={28} color="#F5B32F" />
             ))}
           </Row>
-          {tip > 0 && <T muted>Tip of {formatNaira(tip)} added. Pay it along with the job total.</T>}
         </View>
         <Button label="Done" onPress={() => router.replace('/client')} />
         <Button label={`Book ${first} again`} variant="secondary" onPress={() => router.replace({ pathname: '/book/[service]', params: { service: job.serviceId, pro: pro.id } })} />
@@ -72,7 +69,7 @@ function Rate() {
           disabled={!stars}
           onPress={() => {
             tap('success');
-            dispatch(rateJobAction(job, { rating: stars, tags, comment: comment.trim(), tip }));
+            dispatch(rateJobAction(job, { rating: stars, tags, comment: comment.trim() }));
             setDone(true);
           }}
         />
@@ -119,16 +116,6 @@ function Rate() {
             maxLength={300}
             placeholder={stars >= 4 ? `What did ${first} do well?` : 'Tell us what happened. We’ll follow up.'}
           />
-          {stars >= 4 && (
-            <View style={{ gap: 10 }}>
-              <T variant="heading">Add a tip? 100% goes to {first}</T>
-              <Row gap={8} style={{ flexWrap: 'wrap' }}>
-                {TIPS.map((t) => (
-                  <Chip key={t} label={t ? formatNaira(t) : 'No tip'} selected={tip === t} onPress={() => setTip(t)} />
-                ))}
-              </Row>
-            </View>
-          )}
         </>
       )}
     </FormScreen>

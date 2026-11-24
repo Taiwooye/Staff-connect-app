@@ -4,6 +4,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card, Row, T, tap } from '@/components/ui';
+import { WalletSummary } from '@/components/wallet-summary';
 import { getService } from '@/lib/catalog';
 import { acceptanceRate, useStore } from '@/lib/store';
 import { formatNaira, providerPalette as p } from '@/lib/theme';
@@ -31,7 +32,11 @@ export default function Earnings() {
 
   return (
     <ScrollView style={{ backgroundColor: p.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 16, gap: 16, paddingBottom: 40 }}>
-      <T variant="title">Earnings</T>
+      <T variant="title">Wallet & earnings</T>
+
+      <WalletSummary />
+
+      <T variant="heading">Earnings</T>
 
       <Card style={{ gap: 16 }}>
         <View>

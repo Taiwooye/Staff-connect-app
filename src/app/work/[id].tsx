@@ -8,7 +8,7 @@ import { CityMap } from '@/components/city-map';
 import { useToast } from '@/components/toast';
 import { Avatar, Button, Card, DemoNote, Divider, IconButton, PaletteProvider, Row, shadow, Stars, StepBar, T, tap } from '@/components/ui';
 import { getService } from '@/lib/catalog';
-import { DEMO_MS_PER_HOUR, type ProviderJob, useNow, useStore } from '@/lib/store';
+import { completeProviderJobAction, DEMO_MS_PER_HOUR, type ProviderJob, useNow, useStore } from '@/lib/store';
 import { formatNaira, providerPalette as p, radius } from '@/lib/theme';
 
 const ME = { x: 0.2, y: 0.22 };
@@ -131,7 +131,7 @@ function Steps({ job, now, toast }: { job: ProviderJob; now: number; toast: (m: 
 
   if (job.status === 'arrived') return <PinEntry job={job} onStart={() => update({ status: 'in_progress', startedAt: Date.now() })} />;
 
-  if (job.status === 'in_progress') return <InProgress job={job} now={now} onComplete={() => update({ status: 'completed', completedAt: Date.now() })} />;
+  if (job.status === 'in_progress') return <InProgress job={job} now={now} onComplete={() => dispatch(completeProviderJobAction(job.id))} />;
 
   return <Finished job={job} onDone={(r) => update({ clientRatingGiven: r })} />;
 }
@@ -238,6 +238,7 @@ function InProgress({ job, now, onComplete }: { job: ProviderJob; now: number; o
 
 function Finished({ job, onDone }: { job: ProviderJob; onDone: (rating: number) => void }) {
   const [rating, setRating] = useState(5);
+  const cash = job.payment === 'cash';
   return (
     <>
       <View style={{ alignItems: 'center', gap: 6 }}>
@@ -247,16 +248,18 @@ function Finished({ job, onDone }: { job: ProviderJob; onDone: (rating: number) 
         <T variant="overline" color={p.success}>
           Job complete
         </T>
-        <T variant="display">+{formatNaira(job.pay)}</T>
-        <T muted>added to today’s earnings</T>
+        <T variant="display">{cash ? formatNaira(job.gross) : `+${formatNaira(job.pay)}`}</T>
+        <T muted style={{ textAlign: 'center' }}>
+          {cash ? `Collect ${formatNaira(job.gross)} in cash from ${job.clientName}` : 'Paid by transfer · added to your balance'}
+        </T>
       </View>
       <Card style={{ gap: 8 }}>
         <Row style={{ justifyContent: 'space-between' }}>
-          <T muted>Job total</T>
+          <T muted>Client paid{cash ? ' (cash)' : ' (transfer)'}</T>
           <T variant="label">{formatNaira(job.gross)}</T>
         </Row>
         <Row style={{ justifyContent: 'space-between' }}>
-          <T muted>StaffConnect fee (15%)</T>
+          <T muted>StaffConnect fee (10%)</T>
           <T variant="label">−{formatNaira(job.gross - job.pay)}</T>
         </Row>
         <Divider />
@@ -267,7 +270,9 @@ function Finished({ job, onDone }: { job: ProviderJob; onDone: (rating: number) 
           </T>
         </Row>
         <T variant="caption" muted>
-          The client pays you directly. Demo records only — no money moves.
+          {cash
+            ? `You keep the cash. The ${formatNaira(job.gross - job.pay)} fee was taken from your StaffConnect balance.`
+            : `${formatNaira(job.pay)} is in your balance and will be paid out on Friday, or withdraw it now from Wallet.`}
         </T>
       </Card>
       <View style={{ alignItems: 'center', gap: 10 }}>

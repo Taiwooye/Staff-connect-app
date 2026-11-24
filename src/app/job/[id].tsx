@@ -78,7 +78,7 @@ function Detail({ job }: { job: JobOpening }) {
               label="Withdraw application"
               variant="secondary"
               onPress={() => {
-                dispatch({ type: 'withdraw', jobId: job.id });
+                dispatch({ type: 'withdrawApplication', jobId: job.id });
                 router.back();
               }}
             />

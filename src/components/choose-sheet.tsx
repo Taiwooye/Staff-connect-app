@@ -57,18 +57,17 @@ export function ChooseSheet({
             </T>
             <T variant="label">{formatNaira(price.subtotal)}</T>
           </Row>
-          <Row style={{ justifyContent: 'space-between' }}>
-            <T muted>Service fee</T>
-            <T variant="label">{formatNaira(price.fee)}</T>
-          </Row>
           <Divider />
           <Row style={{ justifyContent: 'space-between' }}>
-            <T variant="label">Total</T>
+            <T variant="label">You pay after the job</T>
             <T variant="heading">{formatNaira(price.total)}</T>
           </Row>
+          <T variant="caption" muted>
+            {first} receives {formatNaira(price.toPro)} · StaffConnect 10% {formatNaira(price.fee)}
+          </T>
         </View>
         <T variant="caption" muted>
-          {first} will be asked to accept. If they decline, you can choose someone else. You won’t be charged in this demo.
+          {first} will be asked to accept. If they decline, you can choose someone else. Nothing is charged until the job is done.
         </T>
         <Button label={`Yes, send to ${first}`} icon="paper-plane" onPress={() => onConfirm(pro)} />
         <Button label="Keep looking" variant="ghost" size="md" onPress={onClose} />

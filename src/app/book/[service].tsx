@@ -158,32 +158,50 @@ function Booking() {
       </Section>
 
       <Section icon="wallet-outline" title="Payment">
-        <Row gap={10}>
-          {(['transfer', 'cash'] as const).map((m) => (
-            <Pressable
-              key={m}
-              onPress={() => setPayment(m)}
-              style={{
-                flex: 1,
-                padding: 14,
-                borderRadius: radius.md,
-                borderWidth: 2,
-                borderColor: payment === m ? p.accent : p.border,
-                backgroundColor: p.surface,
-                gap: 6,
-              }}>
-              <Ionicons name={m === 'cash' ? 'cash-outline' : 'swap-horizontal-outline'} size={22} color={p.text} />
-              <T variant="label">{m === 'cash' ? 'Cash' : 'Bank transfer'}</T>
-            </Pressable>
-          ))}
-        </Row>
+        {(['transfer', 'cash'] as const).map((m) => (
+          <Pressable
+            key={m}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: payment === m }}
+            onPress={() => setPayment(m)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              padding: 14,
+              borderRadius: radius.md,
+              borderWidth: 2,
+              borderColor: payment === m ? p.accent : p.border,
+              backgroundColor: p.surface,
+            }}>
+            <Ionicons name={m === 'cash' ? 'cash-outline' : 'swap-horizontal-outline'} size={22} color={p.text} />
+            <View style={{ flex: 1 }}>
+              <Row gap={8}>
+                <T variant="label">{m === 'cash' ? 'Cash' : 'Bank transfer'}</T>
+                {m === 'transfer' && (
+                  <View style={{ backgroundColor: p.accentSoft, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                    <T variant="caption" color={p.accent} style={{ fontWeight: '700' }}>
+                      Recommended
+                    </T>
+                  </View>
+                )}
+              </Row>
+              <T variant="caption" muted>
+                {m === 'transfer'
+                  ? 'Pay in the app after the job. Your pro is paid instantly.'
+                  : 'Hand cash to your pro. Their 10% fee is taken from their StaffConnect balance.'}
+              </T>
+            </View>
+            <Ionicons name={payment === m ? 'radio-button-on' : 'radio-button-off'} size={22} color={payment === m ? p.accent : p.textMuted} />
+          </Pressable>
+        ))}
         <Card style={{ gap: 8 }}>
           <Line label={`${formatNaira(rate)} × ${hours} hrs`} value={formatNaira(price.subtotal)} />
-          <Line label="Service fee (10%)" value={formatNaira(price.fee)} />
           <Divider />
-          <Line label="Total" value={formatNaira(price.total)} bold />
+          <Line label="You pay" value={formatNaira(price.total)} bold />
           <T variant="caption" muted>
-            Pay your pro directly after the job. In this demo, StaffConnect records payment but does not move money.
+            No extra fees. StaffConnect keeps 10% ({formatNaira(price.fee)}) and {pro ? pro.name.split(' ')[0] : 'your pro'} receives{' '}
+            {formatNaira(price.toPro)}.
           </T>
         </Card>
       </Section>

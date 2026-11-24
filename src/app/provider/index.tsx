@@ -221,8 +221,20 @@ function IncomingOffer({ offer }: { offer: Offer }) {
             </T>
             <T variant="display">{formatNaira(offer.pay)}</T>
             <T muted variant="caption">
-              Your take-home · {formatNaira(offer.gross)} before 15% fee
+              Your take-home after 10% · client pays {formatNaira(offer.gross)}
             </T>
+            <Row gap={6} style={{ marginTop: 4 }}>
+              <Ionicons
+                name={offer.payment === 'cash' ? 'cash-outline' : 'swap-horizontal-outline'}
+                size={14}
+                color={offer.payment === 'cash' ? p.warning : p.success}
+              />
+              <T variant="caption" color={offer.payment === 'cash' ? p.warning : p.success}>
+                {offer.payment === 'cash'
+                  ? `Cash job · ${formatNaira(offer.gross - offer.pay)} fee taken from your balance`
+                  : 'Paid by transfer straight to your balance'}
+              </T>
+            </Row>
           </View>
           <View style={{ width: 64, height: 64, alignItems: 'center', justifyContent: 'center' }}>
             <Svg width={64} height={64} style={StyleSheet.absoluteFill}>
