@@ -18,10 +18,20 @@ Uber and Bolt ship separate apps for riders and drivers because the two sides do
 | Tabs | Home · Bookings · Account | Work · Jobs · Wallet · Profile |
 | Onboarding | Phone + OTP → name and area → what you need → your matches | Phone + OTP → name and area → services → work areas → rate and availability → bio → ID, selfie, address, and references → review → approval |
 
+### Applying for jobs and getting hired
+
+- **Find work:** the Jobs tab has a search box (title, hirer, area or service), filters (service, area, schedule) and sorting (best match, newest, highest pay).
+- **Clear next steps:** a *Your work* panel at the top shows each live application and what to do next: waiting, reply to the hirer, accept the offer, or "You start in 4 days".
+- **Applied → Shortlisted:** the hirer sends a message, and the worker can reply in a **chat**, with quick replies.
+- **Job offer:** shows the start date and time, area, pay after the 10% fee, and contact. The worker taps **Accept offer** (or Decline).
+- **Hired:** shows the full address, the hirer's name and phone, and Call / Directions / Add to calendar buttons.
+- **Alerts:** every update creates an **inbox** item (bell with an unread badge) and a pop-up **banner**, and the Work home shows "You have a job offer!".
+
 ### Payments and payouts
 
 All money rules live in [`src/lib/money.ts`](src/lib/money.ts):
 
+- **Fee disclosure, as Uber and Bolt do it:** the 10% service fee is stated with a worked example during worker sign-up. Every job offer, application and payment then shows *client pays → service fee → you receive*.
 - **10% on every payment, taken out of the price, not added on top.** If a client pays ₦30,000, the worker receives ₦27,000 and StaffConnect keeps ₦3,000.
 - **Bank transfer is the default.** After the job, the client taps **Pay**, can add a tip, and transfers to a unique account for that payment. The worker is credited instantly, minus 10%.
 - **Cash is allowed.** The worker keeps the cash, and the 10% fee is deducted from their StaffConnect balance. The balance can go negative, and the debt is recovered from later transfer earnings.

@@ -6,7 +6,10 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { NotificationBanner } from '@/components/notifications';
+import { PaletteProvider } from '@/components/ui';
 import { StoreProvider, useStore } from '@/lib/store';
+import { providerPalette } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -31,6 +34,11 @@ function Shell() {
         <Stack.Screen name="trip/[id]" options={{ animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="work/[id]" options={{ animation: 'fade', gestureEnabled: false }} />
       </Stack>
+      {state.role === 'provider' && (
+        <PaletteProvider palette={providerPalette}>
+          <NotificationBanner />
+        </PaletteProvider>
+      )}
     </>
   );
 }

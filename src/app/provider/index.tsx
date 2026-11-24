@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 
 import { CityMap } from '@/components/city-map';
+import { InboxBell } from '@/components/notifications';
 import { Button, Card, Row, shadow, Stars, T, tap } from '@/components/ui';
 import { getService } from '@/lib/catalog';
 import { matchJobs, RECOMMENDED_THRESHOLD } from '@/lib/matching';
@@ -32,6 +33,7 @@ export default function ProviderHome() {
   const acceptance = acceptanceRate(state);
   const jobMatches = matchJobs(pp, state.profile?.state ?? 'Lagos').filter((m) => m.score >= RECOMMENDED_THRESHOLD).length;
   const hired = state.applications.filter((a) => a.status === 'hired').length;
+  const pending = state.applications.find((a) => a.status === 'offered') ?? state.applications.find((a) => a.status === 'hired');
 
   const toggle = () => {
     tap('heavy');
@@ -57,22 +59,30 @@ export default function ProviderHome() {
       />
 
       <Row style={[styles.top, { top: insets.top + 10 }]}>
+        <View style={{ width: 44 }} />
         <Pressable onPress={() => router.navigate('/provider/earnings')} style={styles.earnPill}>
           <T variant="overline" muted>
             Today
           </T>
           <T variant="heading">{formatNaira(today)}</T>
         </Pressable>
+        <InboxBell />
       </Row>
       <Pressable
-        onPress={() => router.navigate('/provider/jobs')}
+        onPress={() => (pending ? router.push(`/job/${pending.jobId}`) : router.navigate('/provider/jobs'))}
         style={[styles.jobsPill, { top: insets.top + 74 }]}
         accessibilityRole="button">
-        <Ionicons name={hired ? 'checkmark-circle' : 'sparkles'} size={16} color={hired ? p.success : p.accent} />
+        <Ionicons
+          name={pending?.status === 'offered' ? 'gift' : hired ? 'checkmark-circle' : 'sparkles'}
+          size={16}
+          color={pending?.status === 'offered' ? p.accent : hired ? p.success : p.accent}
+        />
         <View>
-          <T variant="label">{hired ? `Hired for ${hired} job${hired > 1 ? 's' : ''}` : `${jobMatches} jobs match you`}</T>
+          <T variant="label">
+            {pending?.status === 'offered' ? 'You have a job offer!' : hired ? `Hired for ${hired} job${hired > 1 ? 's' : ''}` : `${jobMatches} jobs match you`}
+          </T>
           <T variant="caption" muted>
-            {hired ? 'See details' : 'Ongoing work · apply now'}
+            {pending?.status === 'offered' ? 'Tap to accept' : hired ? 'See start date' : 'Ongoing work · apply now'}
           </T>
         </View>
         <Ionicons name="chevron-forward" size={16} color={p.textMuted} />
@@ -221,7 +231,7 @@ function IncomingOffer({ offer }: { offer: Offer }) {
             </T>
             <T variant="display">{formatNaira(offer.pay)}</T>
             <T muted variant="caption">
-              Your take-home after 10% · client pays {formatNaira(offer.gross)}
+              You receive · client pays {formatNaira(offer.gross)} · 10% service fee −{formatNaira(offer.gross - offer.pay)}
             </T>
             <Row gap={6} style={{ marginTop: 4 }}>
               <Ionicons
@@ -321,7 +331,7 @@ function Meta({ icon, text }: { icon: 'navigate-outline' | 'location-outline' | 
 }
 
 const styles = StyleSheet.create({
-  top: { position: 'absolute', left: 16, right: 16, justifyContent: 'center' },
+  top: { position: 'absolute', left: 16, right: 16, justifyContent: 'space-between' },
   earnPill: { backgroundColor: p.surface, borderRadius: radius.pill, paddingHorizontal: 22, paddingVertical: 8, alignItems: 'center', borderWidth: 1, borderColor: p.border, ...shadow(3) },
   jobsPill: {
     position: 'absolute',

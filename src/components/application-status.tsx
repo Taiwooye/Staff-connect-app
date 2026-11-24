@@ -10,13 +10,15 @@ import { T, usePalette } from './ui';
 export const applicationCopy: Record<ApplicationStatus, { label: string; icon: IconName }> = {
   applied: { label: 'Applied', icon: 'paper-plane-outline' },
   shortlisted: { label: 'Shortlisted', icon: 'star-outline' },
+  offered: { label: 'Offer received', icon: 'gift-outline' },
   hired: { label: 'Hired', icon: 'checkmark-circle' },
   not_selected: { label: 'Not selected', icon: 'close-circle-outline' },
+  declined: { label: 'You declined', icon: 'close-circle-outline' },
 };
 
 export function ApplicationPill({ status }: { status: ApplicationStatus }) {
   const p = usePalette();
-  const color = status === 'hired' ? p.success : status === 'not_selected' ? p.textMuted : p.accent;
+  const color = status === 'hired' ? p.success : status === 'not_selected' || status === 'declined' ? p.textMuted : p.accent;
   const { label, icon } = applicationCopy[status];
   return (
     <View

@@ -20,6 +20,7 @@ import {
   services,
 } from './catalog';
 import type { ClientPrefs } from './matching';
+import { formatStart, hirerContact, hirerReply, offerMessage, rejectionMessage, shortlistMessage, suggestedStart } from './hiring';
 import { lastPayoutRun, splitPayment } from './money';
 
 export type Role = 'client' | 'provider';
@@ -146,6 +147,7 @@ type State = {
   ledger: LedgerEntry[];
   payoutCheckedAt?: number;
   platformFees: PlatformFee[];
+  notifications: AppNotification[];
 };
 
 export type LedgerKind = 'earning' | 'cash_fee' | 'friday_payout' | 'withdrawal' | 'to_wallet';
@@ -169,7 +171,11 @@ export type PlatformFee = {
   description: string;
 };
 
-export type ApplicationStatus = 'applied' | 'shortlisted' | 'hired' | 'not_selected';
+export type ApplicationStatus = 'applied' | 'shortlisted' | 'offered' | 'hired' | 'not_selected' | 'declined';
+
+export type ChatMessage = { id: string; from: 'hirer' | 'me'; text: string; at: number };
+
+export type JobOfferDetails = { startAt: number; contactName: string; contactPhone: string };
 
 export type Application = {
   jobId: string;
@@ -178,7 +184,13 @@ export type Application = {
   status: ApplicationStatus;
   appliedAt: number;
   updatedAt: number;
+  messages: ChatMessage[];
+  unread: number;
+  replyDueAt?: number;
+  offer?: JobOfferDetails;
 };
+
+export type AppNotification = { id: string; at: number; title: string; body: string; href: string; read: boolean };
 
 const initialState: State = {
   hydrated: false,
@@ -193,6 +205,7 @@ const initialState: State = {
   wallet: 0,
   ledger: [],
   platformFees: [],
+  notifications: [],
 };
 
 type Action =
@@ -222,12 +235,56 @@ type Action =
   | { type: 'moveToWallet'; amount: number; now: number; id: string }
   | { type: 'withdraw'; from: 'balance' | 'wallet'; amount: number; now: number; id: string }
   | { type: 'fridayPayout'; now: number; id: string }
+  | {
+      type: 'applicationEvent';
+      jobId: string;
+      patch: Partial<Application>;
+      message?: ChatMessage;
+      notification?: AppNotification;
+    }
+  | { type: 'sendMessage'; jobId: string; message: ChatMessage; replyDueAt: number }
+  | { type: 'readChat'; jobId: string }
+  | { type: 'readNotifications' }
   | { type: 'reset' };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
-    case 'hydrate':
-      return { ...state, ...action.state, hydrated: true };
+    case 'hydrate': {
+      const next = { ...state, ...action.state, hydrated: true };
+      // Older saved applications predate messaging.
+      next.applications = next.applications.map((a) => ({ ...a, messages: a.messages ?? [], unread: a.unread ?? 0 }));
+      return next;
+    }
+    case 'applicationEvent':
+      return {
+        ...state,
+        applications: state.applications.map((a) =>
+          a.jobId === action.jobId
+            ? {
+                ...a,
+                ...action.patch,
+                messages: action.message ? [...a.messages, action.message] : a.messages,
+                unread: a.unread + (action.message?.from === 'hirer' ? 1 : 0),
+              }
+            : a,
+        ),
+        notifications: action.notification ? [action.notification, ...state.notifications] : state.notifications,
+      };
+    case 'sendMessage':
+      return {
+        ...state,
+        applications: state.applications.map((a) =>
+          a.jobId === action.jobId ? { ...a, messages: [...a.messages, action.message], replyDueAt: action.replyDueAt } : a,
+        ),
+      };
+    case 'readChat':
+      return {
+        ...state,
+        applications: state.applications.map((a) => (a.jobId === action.jobId ? { ...a, unread: 0 } : a)),
+        notifications: state.notifications.map((n) => (n.href.includes(action.jobId) ? { ...n, read: true } : n)),
+      };
+    case 'readNotifications':
+      return { ...state, notifications: state.notifications.map((n) => ({ ...n, read: true })) };
     case 'setRole':
       return { ...state, role: action.role, online: action.role === 'provider' ? state.online : false };
     case 'setProfile':
@@ -558,23 +615,57 @@ function useSimulation(
     }
   }, [now, state, clientJob, providerJob, dispatch]);
 
-  // Hirers respond to job applications: shortlist, then hire if the asking pay fits.
+  // Hirers respond to applications: shortlist with a message, then send a job offer
+  // (start date, contact) if the asking pay fits, and reply to the worker's messages.
   useEffect(() => {
+    const first = state.profile?.name.split(' ')[0] ?? 'there';
     for (const a of state.applications) {
       const job = getJob(a.jobId);
       if (!job) continue;
+      const href = `/job/${job.id}`;
+      const hirerSays = (text: string): ChatMessage => ({ id: makeId(), from: 'hirer', text, at: now });
+      const notify = (title: string, body: string): AppNotification => ({ id: makeId(), at: now, title, body, href, read: false });
+
       if (a.status === 'applied' && now - a.appliedAt > APPLICATION_SHORTLIST_MS) {
-        dispatch({ type: 'updateApplication', jobId: a.jobId, patch: { status: 'shortlisted', updatedAt: now } });
-      } else if (a.status === 'shortlisted' && now - a.appliedAt > APPLICATION_DECISION_MS) {
-        const fits = a.rate <= job.payMax;
         dispatch({
-          type: 'updateApplication',
+          type: 'applicationEvent',
           jobId: a.jobId,
-          patch: { status: fits ? 'hired' : 'not_selected', updatedAt: now },
+          patch: { status: 'shortlisted', updatedAt: now },
+          message: hirerSays(shortlistMessage(job, first)),
+          notification: notify('You’ve been shortlisted', `${job.hirer} shortlisted you for ${job.title} and sent a message.`),
+        });
+      } else if (a.status === 'shortlisted' && now - a.appliedAt > APPLICATION_DECISION_MS) {
+        if (a.rate <= job.payMax) {
+          const startAt = suggestedStart(job, now);
+          const contact = hirerContact(job);
+          dispatch({
+            type: 'applicationEvent',
+            jobId: a.jobId,
+            patch: { status: 'offered', updatedAt: now, offer: { startAt, contactName: contact.name, contactPhone: contact.phone } },
+            message: hirerSays(offerMessage(job, first, startAt)),
+            notification: notify('🎉 You have a job offer', `${job.hirer} wants you to start ${formatStart(startAt)}. Accept to confirm.`),
+          });
+        } else {
+          dispatch({
+            type: 'applicationEvent',
+            jobId: a.jobId,
+            patch: { status: 'not_selected', updatedAt: now },
+            message: hirerSays(rejectionMessage(job, first)),
+            notification: notify('Application update', `${job.hirer} went with another candidate for ${job.title}.`),
+          });
+        }
+      } else if (a.replyDueAt && now > a.replyDueAt) {
+        const last = [...a.messages].reverse().find((m) => m.from === 'me');
+        dispatch({
+          type: 'applicationEvent',
+          jobId: a.jobId,
+          patch: { replyDueAt: undefined },
+          message: hirerSays(hirerReply(last?.text ?? '', job, a.status === 'hired', a.offer?.startAt)),
+          notification: notify(`New message from ${job.hirer}`, job.title),
         });
       }
     }
-  }, [now, state.applications, dispatch]);
+  }, [now, state.applications, state.profile, dispatch]);
 
   // Automatic Friday payouts: once a Friday 9:00 AM run has passed since the last check,
   // the whole positive balance is paid to the worker's bank account.
@@ -674,4 +765,32 @@ export function withdrawAction(from: 'balance' | 'wallet', amount: number): Acti
 
 export function fridayPayoutAction(): Action {
   return { type: 'fridayPayout', now: Date.now(), id: makeId() };
+}
+
+export function sendMessageAction(jobId: string, text: string): Action {
+  const now = Date.now();
+  return { type: 'sendMessage', jobId, message: { id: makeId(), from: 'me', text, at: now }, replyDueAt: now + 2500 };
+}
+
+/** The worker accepts or declines a job offer. Accepting confirms the start date. */
+export function respondToOfferAction(jobId: string, accept: boolean, startAt?: number): Action {
+  const now = Date.now();
+  return {
+    type: 'applicationEvent',
+    jobId,
+    patch: { status: accept ? 'hired' : 'declined', updatedAt: now, replyDueAt: accept ? now + 2500 : undefined },
+    message: {
+      id: makeId(),
+      from: 'me',
+      at: now,
+      text: accept
+        ? `I accept. See you ${startAt ? formatStart(startAt) : 'soon'}!`
+        : 'Thank you for the offer, but I’m unable to take this job.',
+    },
+  };
+}
+
+export function newApplication(input: Pick<Application, 'jobId' | 'rate' | 'note'>): Application {
+  const now = Date.now();
+  return { ...input, status: 'applied', appliedAt: now, updatedAt: now, messages: [], unread: 0 };
 }

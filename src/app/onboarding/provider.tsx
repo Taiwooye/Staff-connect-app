@@ -133,7 +133,7 @@ function Wizard() {
     },
     {
       title: 'Set your rate & hours',
-      subtitle: 'Clients see your hourly rate. StaffConnect keeps 10% of every payment.',
+      subtitle: 'This is the rate clients see and pay.',
       valid: availability.length > 0,
       body: (
         <>
@@ -147,7 +147,26 @@ function Wizard() {
               <RoundBtn icon="add" onPress={() => setRate(hourly + 250)} />
             </Row>
             <T variant="caption" muted>
-              You take home {formatNaira(hourly * 0.9)}/hr after the 10% fee · Suggested {formatNaira(suggested)}
+              Suggested for your services: {formatNaira(suggested)}/hr
+            </T>
+          </Card>
+          <Card style={{ gap: 8, borderColor: p.accent }}>
+            <Row gap={8}>
+              <Ionicons name="pricetag" size={18} color={p.accent} />
+              <T variant="label">StaffConnect service fee: 10%</T>
+            </Row>
+            <T variant="caption" muted>
+              We keep 10% of every payment you receive, which covers matching, secure payments and support. There are no
+              sign-up or monthly fees.
+            </T>
+            <View style={{ backgroundColor: p.surfaceAlt, borderRadius: radius.sm, padding: 10, gap: 4 }}>
+              <T variant="caption">Example: a client pays ₦10,000</T>
+              <T variant="caption" muted>
+                Service fee (10%) −₦1,000 · You receive ₦9,000
+              </T>
+            </View>
+            <T variant="caption" muted>
+              You’ll see this breakdown on every job offer and payment.
             </T>
           </Card>
           <View style={{ gap: 10 }}>
