@@ -12,6 +12,7 @@ import {
 
 import {
   type DemoPro,
+  demoAddresses,
   demoClients,
   getJob,
   getPro,
@@ -30,6 +31,9 @@ export type Profile = {
   phone: string;
   state: string;
   area: string;
+  /** Street address. Kept on record by StaffConnect for safety and dispute handling. */
+  address?: string;
+  landmark?: string;
   photo?: string; // data URI of a small square photo
 };
 
@@ -76,6 +80,7 @@ export type ClientJob = {
   serviceId: string;
   area: string;
   address: string;
+  landmark?: string;
   when: string;
   hours: number;
   tasks: string[];
@@ -106,6 +111,9 @@ export type Offer = {
   clientName: string;
   clientRating: number;
   area: string;
+  /** Full address; only shown to the pro once they accept. */
+  address?: string;
+  landmark?: string;
   distanceKm: number;
   hours: number;
   gross: number;
@@ -690,6 +698,7 @@ function makeOffer(state: State, now: number): Offer {
   const service = getService(serviceId);
   const areas = pp?.areas.length ? pp.areas : [state.profile?.area ?? 'Lekki'];
   const client = demoClients[Math.floor(Math.random() * demoClients.length)];
+  const place = demoAddresses[Math.floor(Math.random() * demoAddresses.length)];
   const hours = service.minHours + Math.floor(Math.random() * 3);
   const rate = pp?.hourlyRate ?? service.hourlyRate;
   const gross = rate * hours;
@@ -700,6 +709,8 @@ function makeOffer(state: State, now: number): Offer {
     clientName: client.name,
     clientRating: client.rating,
     area: areas[Math.floor(Math.random() * areas.length)],
+    address: place.address,
+    landmark: place.landmark,
     distanceKm: Math.round((0.8 + Math.random() * 4.5) * 10) / 10,
     hours,
     gross,

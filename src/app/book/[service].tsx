@@ -29,7 +29,8 @@ function Booking() {
   const homeState = (state.profile?.state as LaunchState) ?? 'Lagos';
 
   const [area, setArea] = useState(state.profile?.area ?? launchLocations[homeState][0]);
-  const [address, setAddress] = useState('');
+  const [address, setAddress] = useState(state.profile?.address ?? '');
+  const [landmark, setLandmark] = useState(state.profile?.landmark ?? '');
   const [when, setWhen] = useState('Now');
   const [slot, setSlot] = useState(timeSlots[1]);
   const [hours, setHours] = useState(service.minHours);
@@ -38,13 +39,14 @@ function Booking() {
   const [payment, setPayment] = useState<'cash' | 'transfer'>('transfer');
 
   const price = priceFor(service.id, hours, rate);
-  const valid = address.trim().length >= 4 && tasks.length > 0;
+  const valid = address.trim().length >= 6 && tasks.length > 0;
 
   const request = () => {
     const job = createClientJob({
       serviceId: service.id,
       area,
       address: address.trim(),
+      landmark: landmark.trim() || undefined,
       when: when === 'Now' ? 'Now' : `${when}, ${slot}`,
       hours,
       tasks,
@@ -116,7 +118,11 @@ function Booking() {
             <Chip key={a} label={a} selected={area === a} onPress={() => setArea(a)} />
           ))}
         </View>
-        <Field label="Street address" value={address} onChangeText={setAddress} placeholder="e.g. 12 Admiralty Way" />
+        <Field label="Street address" value={address} onChangeText={setAddress} placeholder="e.g. 12 Admiralty Way" autoCapitalize="words" />
+        <Field label="Nearest landmark (optional)" value={landmark} onChangeText={setLandmark} placeholder="e.g. Opposite the filling station" />
+        <T variant="caption" muted>
+          Your pro sees the full address only after accepting. StaffConnect keeps it on record for safety.
+        </T>
       </Section>
 
       <Section icon="time-outline" title="When">

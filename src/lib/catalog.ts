@@ -229,6 +229,15 @@ export function ratingWith(pro: DemoPro, mine: { rating: number }[]) {
   return { average: Math.round((sum / count) * 10) / 10, count };
 }
 
+/** Demo street addresses for simulated job offers. */
+export const demoAddresses = [
+  { address: '14 Palm Avenue', landmark: 'Opposite the filling station' },
+  { address: '7 Bode Thomas Street', landmark: 'Blue gate, next to the pharmacy' },
+  { address: '22 Admiralty Way', landmark: 'Behind the shopping mall' },
+  { address: '3 Ring Road', landmark: 'Near the church junction' },
+  { address: '11 Awolowo Avenue', landmark: 'Yellow building, 2nd floor' },
+];
+
 export const demoClients = [
   { name: 'Folake A.', rating: 4.9 },
   { name: 'David O.', rating: 4.7 },

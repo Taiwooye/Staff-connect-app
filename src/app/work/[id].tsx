@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, type TextInputInstance, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, TextInput, type TextInputInstance, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityMap } from '@/components/city-map';
@@ -102,6 +102,7 @@ function Steps({ job, now, toast }: { job: ProviderJob; now: number; toast: (m: 
     return (
       <>
         <ClientCard job={job} toast={toast} />
+        <AddressCard job={job} />
         <Card style={{ gap: 8 }}>
           <Row gap={8}>
             <Ionicons name={service.icon} size={18} color={p.accent} />
@@ -295,6 +296,32 @@ function Finished({ job, onDone }: { job: ProviderJob; onDone: (rating: number) 
         }}
       />
     </>
+  );
+}
+
+/** Full address, shown to the pro only after they've accepted the job. */
+function AddressCard({ job }: { job: ProviderJob }) {
+  const full = [job.address, job.area].filter(Boolean).join(', ');
+  const openMaps = () => {
+    tap();
+    const query = encodeURIComponent(`${full}, Nigeria`);
+    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`).catch(() => {});
+  };
+  return (
+    <Card style={{ gap: 10 }}>
+      <Row gap={10} style={{ alignItems: 'flex-start' }}>
+        <Ionicons name="location" size={20} color={p.accent} style={{ marginTop: 2 }} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <T variant="label">{full}</T>
+          {job.landmark && (
+            <T variant="caption" muted>
+              {job.landmark}
+            </T>
+          )}
+        </View>
+      </Row>
+      <Button label="Open in Maps" icon="navigate" variant="secondary" size="md" onPress={openMaps} />
+    </Card>
   );
 }
 

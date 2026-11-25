@@ -15,11 +15,13 @@ export default function DetailsScreen() {
   const [name, setName] = useState(state.profile?.name ?? '');
   const [st, setSt] = useState<LaunchState>((state.profile?.state as LaunchState) ?? 'Lagos');
   const [area, setArea] = useState(state.profile?.area ?? '');
+  const [address, setAddress] = useState(state.profile?.address ?? '');
+  const [landmark, setLandmark] = useState(state.profile?.landmark ?? '');
 
-  const valid = name.trim().length >= 2 && !!area;
+  const valid = name.trim().length >= 2 && !!area && address.trim().length >= 6;
 
   const finish = () => {
-    dispatch({ type: 'setProfile', profile: { name: name.trim(), phone: phone ?? '', state: st, area } });
+    dispatch({ type: 'setProfile', profile: { name: name.trim(), phone: phone ?? '', state: st, area, address: address.trim(), landmark: landmark.trim() || undefined } });
     dispatch({ type: 'setRole', role: isProvider ? 'provider' : 'client' });
     if (router.canDismiss()) router.dismissAll();
     router.replace(isProvider ? '/onboarding/provider' : '/onboarding/needs');
@@ -69,6 +71,21 @@ export default function DetailsScreen() {
             ))}
           </View>
         </View>
+        <Field
+          label={isProvider ? 'Home address' : 'Street address'}
+          value={address}
+          onChangeText={setAddress}
+          placeholder="e.g. 12 Admiralty Way"
+          autoCapitalize="words"
+          textContentType="fullStreetAddress"
+          autoComplete="street-address"
+        />
+        <Field label="Nearest landmark (optional)" value={landmark} onChangeText={setLandmark} placeholder="e.g. Opposite the filling station" />
+        <T variant="caption" muted>
+          {isProvider
+            ? 'StaffConnect keeps your home address on record for everyone’s safety. Clients never see it.'
+            : 'StaffConnect keeps your address on record for everyone’s safety. A pro only sees it after accepting your job.'}
+        </T>
       </FormScreen>
     </PaletteProvider>
   );

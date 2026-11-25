@@ -4,6 +4,7 @@ import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card, DemoNote, IconButton, PaletteProvider, Row, T } from '@/components/ui';
+import { getService } from '@/lib/catalog';
 import { FEE_RATE } from '@/lib/money';
 import { useStore } from '@/lib/store';
 import { clientPalette as p, formatNaira } from '@/lib/theme';
@@ -78,8 +79,69 @@ export default function AdminRevenue() {
             ))}
           </Card>
         )}
+        <View style={{ gap: 4 }}>
+          <T variant="heading">Job records</T>
+          <T muted>Who booked, where, and who went. Kept so StaffConnect can step in if anything goes wrong.</T>
+        </View>
+        {state.clientJobs.length + state.providerJobs.length === 0 && <T muted>No jobs yet.</T>}
+        {state.clientJobs.map((j) => (
+          <JobRecord
+            key={j.id}
+            title={`${getService(j.serviceId).label} · ${j.status.replace('_', ' ')}`}
+            at={j.createdAt}
+            rows={[
+              ['Client', [state.profile?.name, state.profile?.phone].filter(Boolean).join(' · ') || 'Unknown'],
+              ['Address', `${j.address}, ${j.area}`],
+              ['Landmark', j.landmark],
+              ['Pro', j.pro?.name],
+              ['Start code', j.pin],
+            ]}
+          />
+        ))}
+        {state.providerJobs.map((j) => (
+          <JobRecord
+            key={j.id}
+            title={`${getService(j.serviceId).label} · ${j.status.replace('_', ' ')}`}
+            at={j.acceptedAt}
+            rows={[
+              ['Client', j.clientName],
+              ['Address', [j.address, j.area].filter(Boolean).join(', ')],
+              ['Landmark', j.landmark],
+              ['Pro', [state.profile?.name, state.profile?.phone].filter(Boolean).join(' · ')],
+              ['Pro home', [state.profile?.address, state.profile?.area].filter(Boolean).join(', ')],
+            ]}
+          />
+        ))}
+
         <DemoNote>Demo ledger stored on this device. In production this would be StaffConnect’s settlement account.</DemoNote>
       </ScrollView>
     </PaletteProvider>
+  );
+}
+
+function JobRecord({ title, at, rows }: { title: string; at: number; rows: [string, string | undefined][] }) {
+  return (
+    <Card style={{ gap: 8 }}>
+      <Row style={{ justifyContent: 'space-between' }}>
+        <T variant="label" style={{ flex: 1, textTransform: 'capitalize' }}>
+          {title}
+        </T>
+        <T variant="caption" muted>
+          {new Date(at).toLocaleString('en-NG', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+        </T>
+      </Row>
+      {rows
+        .filter(([, v]) => !!v)
+        .map(([k, v]) => (
+          <Row key={k} gap={10} style={{ alignItems: 'flex-start' }}>
+            <T variant="caption" muted style={{ width: 76 }}>
+              {k}
+            </T>
+            <T variant="caption" style={{ flex: 1 }}>
+              {v}
+            </T>
+          </Row>
+        ))}
+    </Card>
   );
 }

@@ -32,6 +32,8 @@ function EditProfile() {
   const [phone, setPhone] = useState(profile.phone.replace(/^\+234/, ''));
   const [st, setSt] = useState<LaunchState>((profile.state as LaunchState) ?? 'Lagos');
   const [area, setArea] = useState(profile.area);
+  const [address, setAddress] = useState(profile.address ?? '');
+  const [landmark, setLandmark] = useState(profile.landmark ?? '');
   const [picked, setPicked] = useState(pp?.services ?? []);
   const [areas, setAreas] = useState(pp?.areas ?? []);
   const [rate, setRate] = useState(pp?.hourlyRate ?? 2500);
@@ -44,6 +46,7 @@ function EditProfile() {
     name.trim().length < 2 && 'Enter your full name.',
     digits.length !== 10 && 'Enter a 10-digit phone number.',
     !area && 'Choose your area.',
+    address.trim().length < 6 && 'Enter your street address.',
     pp && !picked.length && 'Choose at least one service.',
     pp && !areas.length && 'Choose at least one work area.',
   ].filter(Boolean) as string[];
@@ -64,7 +67,7 @@ function EditProfile() {
   };
 
   const save = () => {
-    dispatch({ type: 'updateProfile', patch: { name: name.trim(), phone: `+234${digits}`, state: st, area, photo } });
+    dispatch({ type: 'updateProfile', patch: { name: name.trim(), phone: `+234${digits}`, state: st, area, address: address.trim(), landmark: landmark.trim() || undefined, photo } });
     if (pp) {
       dispatch({ type: 'updateProviderProfile', patch: { services: picked, areas, hourlyRate: rate, availability, bio: bio.trim() } });
     }
@@ -147,6 +150,8 @@ function EditProfile() {
             ))}
           </View>
         </View>
+        <Field label={pp ? 'Home address' : 'Street address'} value={address} onChangeText={setAddress} placeholder="e.g. 12 Admiralty Way" autoCapitalize="words" />
+        <Field label="Nearest landmark (optional)" value={landmark} onChangeText={setLandmark} placeholder="e.g. Opposite the filling station" />
 
         {pp && (
           <>
