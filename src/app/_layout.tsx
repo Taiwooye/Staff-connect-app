@@ -1,11 +1,12 @@
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { LaunchLoader } from '@/components/launch-loader';
 import { NotificationBanner } from '@/components/notifications';
 import { PaletteProvider } from '@/components/ui';
 import { StoreProvider, useStore } from '@/lib/store';
@@ -15,6 +16,9 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function Shell() {
   const { state } = useStore();
+  // The animated launch loader shows on every app start, right after the native splash.
+  const [showLoader, setShowLoader] = useState(true);
+  const hideLoader = useCallback(() => setShowLoader(false), []);
 
   useEffect(() => {
     if (state.hydrated) SplashScreen.hideAsync().catch(() => {});
@@ -39,6 +43,7 @@ function Shell() {
           <NotificationBanner />
         </PaletteProvider>
       )}
+      {showLoader && <LaunchLoader onDone={hideLoader} />}
     </>
   );
 }
