@@ -49,7 +49,7 @@ function Rate() {
           <Avatar initials={pro.initials} color={pro.color} size={72} />
           <Row gap={4} accessibilityLabel={`You rated ${stars} out of 5`}>
             {[1, 2, 3, 4, 5].map((n) => (
-              <Ionicons key={n} name={n <= stars ? 'star' : 'star-outline'} size={28} color="#F5B32F" />
+              <Ionicons key={n} name={n <= stars ? 'star' : 'star-outline'} size={28} color="#FBBF24" />
             ))}
           </Row>
         </View>
@@ -89,7 +89,7 @@ function Rate() {
                 if ((n >= 4) !== (stars >= 4)) setTags([]);
                 setStars(n);
               }}>
-              <Ionicons name={n <= stars ? 'star' : 'star-outline'} size={48} color="#F5B32F" />
+              <Ionicons name={n <= stars ? 'star' : 'star-outline'} size={48} color="#FBBF24" />
             </Pressable>
           ))}
         </Row>

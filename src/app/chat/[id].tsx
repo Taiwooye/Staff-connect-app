@@ -65,7 +65,7 @@ function Chat() {
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: p.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Row style={{ paddingTop: insets.top + 8, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: p.border }}>
         <IconButton icon="arrow-back" label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace(`/job/${job.id}`))} />
-        <Avatar initials={initialsOf(job.hirer)} color="#3B4743" size={40} />
+        <Avatar initials={initialsOf(job.hirer)} color="#2C4263" size={40} />
         <Pressable style={{ flex: 1 }} onPress={() => router.push(`/job/${job.id}`)}>
           <T variant="label">{job.hirer}</T>
           <T variant="caption" muted numberOfLines={1}>
@@ -157,7 +157,7 @@ function Bubble({ mine, text, at }: { mine: boolean; text: string; at: number })
         gap: 4,
       }}>
       <T color={mine ? p.accentText : p.text}>{text}</T>
-      <T variant="caption" color={mine ? 'rgba(20,16,7,0.6)' : p.textMuted} style={{ alignSelf: 'flex-end', fontSize: 11 }}>
+      <T variant="caption" color={mine ? 'rgba(20,34,54,0.6)' : p.textMuted} style={{ alignSelf: 'flex-end', fontSize: 11 }}>
         {new Date(at).toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit' })}
       </T>
     </View>

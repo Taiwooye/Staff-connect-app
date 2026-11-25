@@ -321,7 +321,7 @@ export function DemoNote({ children }: { children: ReactNode }) {
   );
 }
 
-export function Stars({ value, size = 14, color = '#F5B32F' }: { value: number; size?: number; color?: string }) {
+export function Stars({ value, size = 14, color = '#FBBF24' }: { value: number; size?: number; color?: string }) {
   return (
     <Row gap={2}>
       <Ionicons name="star" size={size} color={color} />

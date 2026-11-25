@@ -58,7 +58,7 @@ export function ProCard({ pro, featured, width }: { pro: DemoPro; featured?: boo
           </View>
         )}
         <View style={{ position: 'absolute', top: 10, right: 10, flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#fff', borderRadius: radius.pill, paddingHorizontal: 7, paddingVertical: 3 }}>
-          <Ionicons name="star" size={11} color="#C98A0B" />
+          <Ionicons name="star" size={11} color="#D97706" />
           <T variant="caption" style={{ fontWeight: '700', fontSize: 11 }}>
             {pro.rating.toFixed(1)}
           </T>

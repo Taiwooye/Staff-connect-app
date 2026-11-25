@@ -102,7 +102,7 @@ function Booking() {
           <View style={{ flex: 1 }}>
             <T variant="label">Requesting {pro.name.split(' ')[0]} directly</T>
             <Row gap={8}>
-              <Stars value={pro.rating} size={12} color="#C98A0B" />
+              <Stars value={pro.rating} size={12} color="#D97706" />
               <T variant="caption" muted>
                 {pro.area} · {pro.jobs} jobs
               </T>

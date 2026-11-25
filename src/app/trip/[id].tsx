@@ -233,7 +233,7 @@ function ProCard({ job, toast }: { job: ClientJob; toast: (m: string) => void })
         <View style={{ flex: 1, gap: 2 }}>
           <T variant="heading">{pro.name}</T>
           <Row gap={10}>
-            <Stars value={pro.rating} color="#C98A0B" />
+            <Stars value={pro.rating} color="#D97706" />
             <T variant="caption" muted>
               {pro.jobs} jobs · {pro.years} yrs
             </T>

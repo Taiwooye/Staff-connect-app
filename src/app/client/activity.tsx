@@ -41,7 +41,7 @@ export default function Activity() {
       {toRate.length > 0 && (
         <Card style={{ backgroundColor: p.accentSoft, borderColor: p.accentSoft, gap: 4 }}>
           <Row gap={8}>
-            <Ionicons name="star" size={18} color="#C98A0B" />
+            <Ionicons name="star" size={18} color="#D97706" />
             <T variant="label">
               {toRate.length === 1 ? '1 booking is waiting for your rating' : `${toRate.length} bookings are waiting for your rating`}
             </T>
@@ -98,7 +98,7 @@ export default function Activity() {
                   {j.rating !== undefined ? (
                     <Row gap={2} accessibilityLabel={`You rated ${j.rating} out of 5`}>
                       {[1, 2, 3, 4, 5].map((n) => (
-                        <Ionicons key={n} name={n <= j.rating! ? 'star' : 'star-outline'} size={16} color="#F5B32F" />
+                        <Ionicons key={n} name={n <= j.rating! ? 'star' : 'star-outline'} size={16} color="#FBBF24" />
                       ))}
                     </Row>
                   ) : live ? (

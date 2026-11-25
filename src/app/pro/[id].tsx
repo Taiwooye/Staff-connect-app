@@ -65,7 +65,7 @@ export default function ProProfile() {
             <T variant="title">{pro.name}</T>
             <Row gap={10}>
               <Row gap={4}>
-                <Ionicons name="star" size={16} color="#C98A0B" />
+                <Ionicons name="star" size={16} color="#D97706" />
                 <T variant="label">{rating.average.toFixed(1)}</T>
                 <T variant="caption" muted>
                   ({rating.count})
@@ -85,8 +85,8 @@ export default function ProProfile() {
           </View>
 
           {unrated && (
-            <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: '#F5B32F' }}>
-              <Ionicons name="star" size={24} color="#F5B32F" />
+            <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: '#FBBF24' }}>
+              <Ionicons name="star" size={24} color="#FBBF24" />
               <T variant="label" style={{ flex: 1 }}>
                 How was your last booking with {first}?
               </T>
@@ -128,7 +128,7 @@ export default function ProProfile() {
                   <T variant="label">{r.author}</T>
                   <Row gap={2} accessibilityLabel={`${r.rating} out of 5 stars`}>
                     {[1, 2, 3, 4, 5].map((n) => (
-                      <Ionicons key={n} name={n <= r.rating ? 'star' : 'star-outline'} size={14} color="#F5B32F" />
+                      <Ionicons key={n} name={n <= r.rating ? 'star' : 'star-outline'} size={14} color="#FBBF24" />
                     ))}
                   </Row>
                 </Row>

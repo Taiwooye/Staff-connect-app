@@ -19,8 +19,9 @@ const EXIT_DURATION = 400;
 const ROLL_DURATION = 2400;
 
 // Matches the native splash background so the hand-off is seamless.
-const BRAND = '#0F9D6B';
-const BRAND_DARK = '#0A7A53';
+const BG = '#F1F5F9'; // light grey (slate-100)
+const NAVY = '#142236';
+const AMBER = '#FCD34D';
 
 /** Piecewise timing for one hop (0..1): crouch → airborne → land → settle. */
 function hopPhase(f: number) {
@@ -95,7 +96,7 @@ export function LaunchLoader({ onDone }: { onDone: () => void }) {
       pointerEvents={leaving ? 'none' : 'auto'}
       accessibilityRole="progressbar"
       accessibilityLabel="Loading StaffConnect">
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       <View style={styles.stage}>
         <Animated.View style={[styles.puff, { left: 22 }, leftPuff]} />
@@ -103,18 +104,18 @@ export function LaunchLoader({ onDone }: { onDone: () => void }) {
         <Animated.View style={[styles.shadow, shadowStyle]} />
         <Animated.View style={[styles.tile, tileStyle]}>
           <Svg width={76} height={76} viewBox="46 62 68 68">
-            <Rect x={46} y={62} width={68} height={68} rx={19} fill="#FFFFFF" />
+            <Rect x={46} y={62} width={68} height={68} rx={19} fill={NAVY} />
             <Path
               d="M62.5 96 L80 80.5 L97.5 96 M67.5 91.5 V113 H92.5 V91.5"
               fill="none"
-              stroke={BRAND}
+              stroke={AMBER}
               strokeWidth={5}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
             <Path
               d="M80 109 C74.5 105 73 102 75.2 99.6 C77 97.7 79 98.3 80 100 C81 98.3 83 97.7 84.8 99.6 C87 102 85.5 105 80 109 Z"
-              fill={BRAND}
+              fill={AMBER}
             />
           </Svg>
         </Animated.View>
@@ -136,7 +137,7 @@ export function LaunchLoader({ onDone }: { onDone: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  root: { zIndex: 100, backgroundColor: BRAND, alignItems: 'center', justifyContent: 'center' },
+  root: { zIndex: 100, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' },
   stage: { width: 140, height: 140, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 18 },
   tile: {
     width: 76,
@@ -146,10 +147,10 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 8 },
   },
-  shadow: { position: 'absolute', bottom: 8, width: 64, height: 10, borderRadius: 999, backgroundColor: BRAND_DARK },
-  puff: { position: 'absolute', bottom: 14, width: 7, height: 7, borderRadius: 999, backgroundColor: '#FFFFFF' },
-  wordmark: { marginTop: 18, fontSize: 28, fontWeight: '800', letterSpacing: -0.8, color: '#FFFFFF' },
-  tagline: { marginTop: 6, fontSize: 15, fontWeight: '500', color: 'rgba(255,255,255,0.8)' },
+  shadow: { position: 'absolute', bottom: 8, width: 64, height: 10, borderRadius: 999, backgroundColor: '#CBD5E1' },
+  puff: { position: 'absolute', bottom: 14, width: 7, height: 7, borderRadius: 999, backgroundColor: '#94A3B8' },
+  wordmark: { marginTop: 18, fontSize: 28, fontWeight: '800', letterSpacing: -0.8, color: NAVY },
+  tagline: { marginTop: 6, fontSize: 15, fontWeight: '500', color: '#475569' },
   skip: { position: 'absolute', right: 24, paddingHorizontal: 14, paddingVertical: 8 },
-  skipText: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.75)' },
+  skipText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
 });

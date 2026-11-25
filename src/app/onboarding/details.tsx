@@ -60,6 +60,9 @@ export default function DetailsScreen() {
           <T variant="caption" muted>
             {isProvider ? 'Where you live' : 'Your area'}
           </T>
+          <T variant="caption" muted>
+            We’re starting in these areas of Lagos and Oyo, with more on the way.
+          </T>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {launchLocations[st].map((a) => (
               <Chip key={a} label={a} selected={area === a} onPress={() => setArea(a)} icon="location-outline" />

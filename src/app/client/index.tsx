@@ -162,7 +162,7 @@ export default function ClientHome() {
                       </T>
                     </View>
                     <Row style={{ justifyContent: 'space-between' }}>
-                      <Stars value={pro.rating} size={13} color="#C98A0B" />
+                      <Stars value={pro.rating} size={13} color="#D97706" />
                       <T variant="caption" muted>
                         {formatNaira(pro.hourlyRate)}/hr
                       </T>

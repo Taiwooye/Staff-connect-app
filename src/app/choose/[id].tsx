@@ -133,7 +133,7 @@ function Choose() {
                 <View style={{ flex: 1, gap: 2 }}>
                   <T variant="heading">{pro.name}</T>
                   <Row gap={6}>
-                    <Ionicons name="star" size={14} color="#C98A0B" />
+                    <Ionicons name="star" size={14} color="#D97706" />
                     <T variant="label">{rating.average.toFixed(1)}</T>
                     <T variant="caption" muted>
                       ({rating.count} reviews) · {pro.years} yrs

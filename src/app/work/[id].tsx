@@ -305,7 +305,7 @@ function ClientCard({ job, toast }: { job: ProviderJob; toast: (m: string) => vo
     .join('');
   return (
     <Row>
-      <Avatar initials={initials} color="#3B4743" size={52} />
+      <Avatar initials={initials} color="#2C4263" size={52} />
       <View style={{ flex: 1 }}>
         <T variant="heading">{job.clientName}</T>
         <Row gap={8}>

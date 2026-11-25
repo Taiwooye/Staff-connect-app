@@ -70,6 +70,6 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  webBackdrop: { flex: 1, backgroundColor: '#0E1A14', alignItems: 'center' },
-  webFrame: { flex: 1, width: '100%', maxWidth: 440, overflow: 'hidden', backgroundColor: '#F6F7F5' },
+  webBackdrop: { flex: 1, backgroundColor: '#0D1725', alignItems: 'center' },
+  webFrame: { flex: 1, width: '100%', maxWidth: 440, overflow: 'hidden', backgroundColor: '#FBF8F2' },
 });

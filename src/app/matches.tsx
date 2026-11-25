@@ -73,7 +73,7 @@ export default function MatchesScreen() {
                   <View style={{ flex: 1, gap: 2 }}>
                     <T variant="heading">{pro.name}</T>
                     <Row gap={8}>
-                      <Stars value={pro.rating} size={13} color="#C98A0B" />
+                      <Stars value={pro.rating} size={13} color="#D97706" />
                       <T variant="caption" muted>
                         {pro.years} yrs · {formatNaira(pro.hourlyRate)}/hr
                       </T>
