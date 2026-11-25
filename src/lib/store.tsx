@@ -23,6 +23,7 @@ import {
 import type { ClientPrefs } from './matching';
 import { formatStart, hirerContact, hirerReply, offerMessage, rejectionMessage, shortlistMessage, suggestedStart } from './hiring';
 import { lastPayoutRun, splitPayment } from './money';
+import { type JobRecord, useCompanyRecords } from './records';
 
 export type Role = 'client' | 'provider';
 
@@ -547,6 +548,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   useSimulation(state, dispatch, activeClientJob, activeProviderJob);
+
+  // Company records (contact details + where each job took place) go to Supabase.
+  const profile = state.profile;
+  const contact = useMemo(
+    () => profile && { name: profile.name, phone: profile.phone, state: profile.state, area: profile.area, address: profile.address, landmark: profile.landmark },
+    [profile],
+  );
+  const jobRecords = useMemo<JobRecord[]>(
+    () => [
+      ...state.clientJobs.map((j) => ({
+        id: j.id,
+        kind: 'booking' as const,
+        serviceId: j.serviceId,
+        status: j.status,
+        area: j.area,
+        address: j.address,
+        landmark: j.landmark,
+        scheduledFor: j.when,
+        hours: j.hours,
+        amount: j.total,
+        payment: j.payment,
+        clientName: profile?.name,
+        proName: j.pro?.name,
+        createdAt: j.createdAt,
+      })),
+      ...state.providerJobs.map((j) => ({
+        id: j.id,
+        kind: 'pro_job' as const,
+        serviceId: j.serviceId,
+        status: j.status,
+        area: j.area,
+        address: j.address ?? '',
+        landmark: j.landmark,
+        hours: j.hours,
+        amount: j.gross,
+        payment: j.payment,
+        clientName: j.clientName,
+        proName: profile?.name,
+        createdAt: j.acceptedAt,
+      })),
+    ],
+    [state.clientJobs, state.providerJobs, profile?.name],
+  );
+  useCompanyRecords(state.hydrated ? state.role : undefined, contact, jobRecords);
 
   const value = useMemo(
     () => ({ state, dispatch, activeClientJob, activeProviderJob }),
